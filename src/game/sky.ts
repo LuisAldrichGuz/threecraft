@@ -73,7 +73,7 @@ export class Sky {
       // sombras pixeladas a propósito, como los shaders de Minecraft: mapa
       // pequeño (cada texel cubre ~0.1 bloque) y sin suavizado (BasicShadowMap)
       this.sun.castShadow = true
-      this.sun.shadow.mapSize.set(1024, 1024)
+      this.sun.shadow.mapSize.set(2048, 2048)
       const cam = this.sun.shadow.camera
       cam.left = -48
       cam.right = 48
@@ -81,8 +81,9 @@ export class Sky {
       cam.bottom = -48
       cam.near = 1
       cam.far = 260
-      this.sun.shadow.bias = -0.0015
-      this.sun.shadow.normalBias = 0.04
+      // el bias separa la sombra del objeto: lo justo para que no salga acné, y nada más
+      this.sun.shadow.bias = -0.0003
+      this.sun.shadow.normalBias = 0.01
       this.sun.shadow.intensity = 1
     }
 
