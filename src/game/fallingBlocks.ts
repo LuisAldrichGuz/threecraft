@@ -13,6 +13,7 @@ import type { Atlas } from './atlas'
  * recorriendo el mundo.
  */
 const GRAVITY = 24
+const MAX_SPEED = 16
 const MAX_FALLING = 64
 
 interface Falling {
@@ -76,15 +77,19 @@ export class FallingBlocks {
   update(dt: number) {
     for (let i = this.list.length - 1; i >= 0; i--) {
       const f = this.list[i]
-      f.vy -= GRAVITY * dt
-      let ny = f.y + f.vy * dt
-      // aterriza en cuanto la celda de debajo es sólida y ya la toca
-      const cellBelow = Math.floor(ny) - 1
-      const restY = cellBelow + 1
-      if (ny <= restY && (cellBelow < 0 || isSolid(this.world.getBlock(f.x, cellBelow, f.z)))) {
-        this.land(i, restY)
-        continue
+      f.vy = Math.max(-MAX_SPEED, f.vy - GRAVITY * dt)
+      const ny = f.y + f.vy * dt
+      // aterriza sobre la primera celda sólida que cruce su base en este paso:
+      // a mucha velocidad un paso salta más de una celda y no se puede mirar sólo la última
+      let landed = false
+      for (let cell = Math.floor(f.y); cell >= Math.floor(ny); cell--) {
+        if (cell < 0 || isSolid(this.world.getBlock(f.x, cell, f.z))) {
+          this.land(i, cell + 1)
+          landed = true
+          break
+        }
       }
+      if (landed) continue
       // cayó fuera del mundo
       if (ny < -2) {
         this.remove(i)

@@ -298,11 +298,15 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
         const def = blockDef(block)
 
         if (def.liquid) {
-          const above = field.block(x, y + 1, z)
-          const aboveLiquid = above !== UNKNOWN && blockDef(above).liquid
-          // la altura del agua depende del nivel: fuente 0.875, corriente cada vez más baja, cayendo llena la celda
-          const lvl = def.level
-          const height = aboveLiquid ? 1 : lvl >= 8 ? 1 : lvl === 0 ? 0.875 : Math.max(0.12, 0.875 - lvl * 0.105)
+          // la altura del agua depende del nivel: fuente 0.875, corriente cada vez
+          // más baja, cayendo o con agua encima llena la celda
+          const liquidHeight = (bx: number, by: number, bz: number, lb: number) => {
+            const ab = field.block(bx, by + 1, bz)
+            if (ab !== UNKNOWN && blockDef(ab).liquid) return 1
+            const l = blockDef(lb).level
+            return l >= 8 ? 1 : l === 0 ? 0.875 : Math.max(0.12, 0.875 - l * 0.105)
+          }
+          const height = liquidHeight(x, y, z, block)
           for (const f of FACES) {
             const n = field.block(x + f.dir[0], y + f.dir[1], z + f.dir[2])
             if (n === UNKNOWN || isOpaque(n)) continue
@@ -311,8 +315,7 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
             if (f.dir[1] === -1 && n !== Block.AIR) continue
             // entre dos aguas sólo se dibuja el escalón si la vecina es más baja
             if (f.dir[1] === 0 && nLiquid) {
-              const nl = blockDef(n).level
-              const nh = nl >= 8 ? 1 : nl === 0 ? 0.875 : Math.max(0.12, 0.875 - nl * 0.105)
+              const nh = liquidHeight(x + f.dir[0], y, z + f.dir[2], n)
               if (nh >= height - 0.01) continue
             }
             const light = f.dir[1] === 1 ? field.light(x, y + 1, z) : Math.max(field.light(x, y, z), field.light(x + f.dir[0], y + f.dir[1], z + f.dir[2]))
