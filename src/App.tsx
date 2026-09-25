@@ -161,6 +161,9 @@ function App() {
                 </div>
                 <button className="mc-btn wide" onClick={() => setTab('controls')}>Controles</button>
                 <div className="mc-text small">Se guarda solo en este navegador</div>
+                <div className="mc-text small credit">
+                  Texturas: <a href="https://faithfulpack.net" target="_blank" rel="noreferrer">Faithful 32x</a> (Faithful License)
+                </div>
               </>
             )}
 

@@ -14,3 +14,9 @@ npm run build        # tsc + vite
 
 Cómo está hecho y por dónde tocar: **[CLAUDE.md](CLAUDE.md)** (índice) y
 **[docs/arquitectura.md](docs/arquitectura.md)** (el detalle).
+
+## Créditos
+
+Texturas de bloques: [Faithful 32x](https://faithfulpack.net) (Faithful Resource
+Pack), bajo la [Faithful License](https://faithfulpack.net/license). Detalle en
+`public/textures/CREDITS.md`.

@@ -2,12 +2,13 @@ import * as THREE from 'three'
 import { TEXTURE_NAMES, blockDef, type Face } from './blocks'
 import type { UVRect, UVTable } from './mesher'
 
-const CELL = 16
+// Faithful 32x: cada tile mide 32 px
+const CELL = 32
 // ⚠️ borde de 1 px alrededor de cada tile: sin él, al filtrar se cuela el color del vecino
 const PAD = 1
 const STRIDE = CELL + PAD * 2
 
-/** las texturas van por número en public/textures (las 611 del pack, tal cual) */
+/** las texturas van por nombre de Minecraft en public/textures (Faithful 32x) */
 const urlOf = (name: string) => `/textures/${name}.png`
 
 function loadImage(src: string): Promise<HTMLImageElement> {

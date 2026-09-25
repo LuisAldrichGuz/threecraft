@@ -1,99 +1,1703 @@
 {
   "categories": [
-    ["natural", "Naturaleza"],
-    ["stone", "Piedra"],
-    ["ore", "Menas"],
-    ["metal", "Minerales"],
-    ["wood", "Madera"],
-    ["plants", "Plantas"],
-    ["building", "Construcción"],
-    ["nether", "Nether"],
-    ["special", "Especiales"]
+    [
+      "natural",
+      "Naturaleza"
+    ],
+    [
+      "stone",
+      "Piedra"
+    ],
+    [
+      "ore",
+      "Menas"
+    ],
+    [
+      "metal",
+      "Minerales"
+    ],
+    [
+      "wood",
+      "Madera"
+    ],
+    [
+      "plants",
+      "Plantas"
+    ],
+    [
+      "building",
+      "Construcción"
+    ],
+    [
+      "wool",
+      "Lana"
+    ],
+    [
+      "concrete",
+      "Hormigón y terracota"
+    ],
+    [
+      "nether",
+      "Nether y End"
+    ],
+    [
+      "special",
+      "Especiales"
+    ]
   ],
   "blocks": [
-    { "key": "grass", "name": "Pasto", "cat": "natural", "top": "grass_block_top", "side": "grass_block_side", "bottom": "dirt", "hardness": 0.6 },
-    { "key": "dirt", "name": "Tierra", "cat": "natural", "all": "dirt", "hardness": 0.5 },
-    { "key": "sand", "name": "Arena", "cat": "natural", "all": "sand", "hardness": 0.5 },
-    { "key": "sandstone", "name": "Arenisca", "cat": "natural", "all": "sandstone", "hardness": 0.8 },
-    { "key": "gravel", "name": "Grava", "cat": "natural", "all": "gravel", "hardness": 0.6 },
-    { "key": "snow", "name": "Nieve", "cat": "natural", "top": "101", "side": "570", "bottom": "dirt", "hardness": 0.2 },
-    { "key": "snow_block", "name": "Bloque de nieve", "cat": "natural", "all": "101", "hardness": 0.2 },
-    { "key": "ice", "name": "Hielo", "cat": "natural", "all": "99", "hardness": 0.5 },
-    { "key": "packed_ice", "name": "Hielo compacto", "cat": "natural", "all": "packed_ice", "hardness": 0.5 },
-
-    { "key": "stone", "name": "Piedra", "cat": "stone", "all": "stone", "hardness": 1.5 },
-    { "key": "cobblestone", "name": "Adoquín", "cat": "stone", "all": "cobblestone", "hardness": 2 },
-    { "key": "mossy_cobblestone", "name": "Adoquín musgoso", "cat": "stone", "all": "mossy_cobblestone", "hardness": 2 },
-    { "key": "andesite", "name": "Andesita", "cat": "stone", "all": "andesite", "hardness": 1.5 },
-    { "key": "diorite", "name": "Diorita", "cat": "stone", "all": "diorite", "hardness": 1.5 },
-    { "key": "granite", "name": "Granito", "cat": "stone", "all": "granite", "hardness": 1.5 },
-    { "key": "deepslate", "name": "Pizarra profunda", "cat": "stone", "all": "deepslate", "hardness": 3 },
-    { "key": "obsidian", "name": "Obsidiana", "cat": "stone", "all": "obsidian", "hardness": 8 },
-    { "key": "crying_obsidian", "name": "Obsidiana llorosa", "cat": "stone", "all": "crying_obsidian", "hardness": 8, "glow": 0.5 },
-    { "key": "bedrock", "name": "Roca madre", "cat": "stone", "all": "bedrock", "hardness": -1 },
-
-    { "key": "coal_ore", "name": "Mena de carbón", "cat": "ore", "all": "coal_ore", "hardness": 3 },
-    { "key": "iron_ore", "name": "Mena de hierro", "cat": "ore", "all": "iron_ore", "hardness": 3 },
-    { "key": "copper_ore", "name": "Mena de cobre", "cat": "ore", "all": "copper_ore", "hardness": 3 },
-    { "key": "gold_ore", "name": "Mena de oro", "cat": "ore", "all": "gold_ore", "hardness": 3 },
-    { "key": "redstone_ore", "name": "Mena de redstone", "cat": "ore", "all": "ore_redstone", "hardness": 3 },
-    { "key": "lapis_ore", "name": "Mena de lapislázuli", "cat": "ore", "all": "lapis_ore", "hardness": 3 },
-    { "key": "diamond_ore", "name": "Mena de diamante", "cat": "ore", "all": "diamond_ore", "hardness": 3 },
-    { "key": "emerald_ore", "name": "Mena de esmeralda", "cat": "ore", "all": "emerald_ore", "hardness": 3 },
-    { "key": "deepslate_coal_ore", "name": "Carbón en pizarra", "cat": "ore", "all": "deepslate_coal_ore", "hardness": 4.5 },
-    { "key": "deepslate_iron_ore", "name": "Hierro en pizarra", "cat": "ore", "all": "deepslate_iron_ore", "hardness": 4.5 },
-    { "key": "deepslate_copper_ore", "name": "Cobre en pizarra", "cat": "ore", "all": "deepslate_copper_ore", "hardness": 4.5 },
-    { "key": "deepslate_gold_ore", "name": "Oro en pizarra", "cat": "ore", "all": "deepslate_gold_ore", "hardness": 4.5 },
-    { "key": "deepslate_redstone_ore", "name": "Redstone en pizarra", "cat": "ore", "all": "deepslate_redstone_ore", "hardness": 4.5 },
-    { "key": "deepslate_lapis_ore", "name": "Lapislázuli en pizarra", "cat": "ore", "all": "deepslate_lapis_ore", "hardness": 4.5 },
-    { "key": "deepslate_diamond_ore", "name": "Diamante en pizarra", "cat": "ore", "all": "deepslate_diamond_ore", "hardness": 4.5 },
-    { "key": "deepslate_emerald_ore", "name": "Esmeralda en pizarra", "cat": "ore", "all": "deepslate_emerald_ore", "hardness": 4.5 },
-
-    { "key": "iron_block", "name": "Bloque de hierro", "cat": "metal", "all": "iron_block", "hardness": 5 },
-    { "key": "copper_block", "name": "Bloque de cobre", "cat": "metal", "all": "copper_block", "hardness": 3 },
-    { "key": "gold_block", "name": "Bloque de oro", "cat": "metal", "all": "gold_block", "hardness": 3 },
-    { "key": "redstone_block", "name": "Bloque de redstone", "cat": "metal", "all": "redstone_block", "hardness": 5, "glow": 0.3 },
-    { "key": "lapis_block", "name": "Bloque de lapislázuli", "cat": "metal", "all": "lapis_block", "hardness": 3 },
-    { "key": "diamond_block", "name": "Bloque de diamante", "cat": "metal", "all": "diamond_block", "hardness": 5 },
-    { "key": "emerald_block", "name": "Bloque de esmeralda", "cat": "metal", "all": "emerald_block", "hardness": 5 },
-    { "key": "netherite_block", "name": "Bloque de netherita", "cat": "metal", "all": "netherite_block", "hardness": 8 },
-
-    { "key": "water", "name": "Agua", "cat": "special", "all": "143", "liquid": true, "hidden": true },
-    { "key": "lava", "name": "Lava", "cat": "special", "all": "161", "liquid": true, "glow": 1, "hidden": true },
-
-    { "key": "oak_log", "name": "Tronco de roble", "cat": "wood", "top": "229", "side": "oak_log", "hardness": 2 },
-    { "key": "oak_planks", "name": "Tablones de roble", "cat": "wood", "all": "oak_planks", "hardness": 2 },
-    { "key": "birch_log", "name": "Tronco de abedul", "cat": "wood", "top": "231", "side": "230", "hardness": 2 },
-    { "key": "birch_planks", "name": "Tablones de abedul", "cat": "wood", "all": "203", "hardness": 2 },
-    { "key": "spruce_log", "name": "Tronco de abeto", "cat": "wood", "top": "223", "side": "232", "hardness": 2 },
-    { "key": "spruce_planks", "name": "Tablones de abeto", "cat": "wood", "all": "217", "hardness": 2 },
-    { "key": "bookshelf", "name": "Librero", "cat": "wood", "top": "oak_planks", "side": "bookshelf", "hardness": 1.5 },
-
-    { "key": "oak_leaves", "name": "Hojas de roble", "cat": "plants", "all": "294", "cutout": true, "hardness": 0.2 },
-    { "key": "dark_leaves", "name": "Hojas oscuras", "cat": "plants", "all": "297", "cutout": true, "hardness": 0.2 },
-    { "key": "birch_leaves", "name": "Hojas de abedul", "cat": "plants", "all": "608", "cutout": true, "hardness": 0.2 },
-    { "key": "spruce_leaves", "name": "Hojas de abeto", "cat": "plants", "all": "290", "cutout": true, "hardness": 0.2 },
-    { "key": "flowering_leaves", "name": "Hojas con flores", "cat": "plants", "all": "292", "cutout": true, "hardness": 0.2 },
-    { "key": "cactus", "name": "Cactus", "cat": "plants", "all": "334", "hardness": 0.4 },
-    { "key": "melon", "name": "Sandía", "cat": "plants", "top": "315", "side": "312", "hardness": 1 },
-    { "key": "pumpkin", "name": "Calabaza", "cat": "plants", "top": "484", "side": "485", "hardness": 1 },
-    { "key": "carved_pumpkin", "name": "Calabaza tallada", "cat": "plants", "top": "484", "side": "carved_pumpkin", "hardness": 1, "glow": 0.8 },
-    { "key": "red_mushroom", "name": "Hongo rojo", "cat": "plants", "all": "red_mushroom", "hardness": 0.3 },
-
-    { "key": "bricks", "name": "Ladrillos", "cat": "building", "all": "bricks", "hardness": 2 },
-    { "key": "stone_bricks", "name": "Ladrillos de piedra", "cat": "building", "all": "stone_bricks", "hardness": 1.5 },
-    { "key": "chiseled_stone_bricks", "name": "Ladrillos cincelados", "cat": "building", "all": "chiseled_stone_bricks", "hardness": 1.5 },
-    { "key": "deepslate_bricks", "name": "Ladrillos de pizarra", "cat": "building", "all": "deepslate_bricks", "hardness": 3.5 },
-    { "key": "glass", "name": "Cristal", "cat": "building", "all": "587", "cutout": true, "hardness": 0.3 },
-    { "key": "glowstone", "name": "Piedra luminosa", "cat": "building", "all": "glowstone", "hardness": 0.3, "glow": 1 },
-    { "key": "tnt", "name": "TNT", "cat": "building", "top": "tnt_top", "side": "tnt_side", "bottom": "tnt_bottom", "hardness": 0.1 },
-
-    { "key": "netherrack", "name": "Piedra del Nether", "cat": "nether", "all": "netherrack", "hardness": 0.4 },
-    { "key": "soul_sand", "name": "Arena de almas", "cat": "nether", "all": "soul_sand", "hardness": 0.5 },
-    { "key": "magma", "name": "Magma", "cat": "nether", "all": "magma", "hardness": 0.5, "glow": 0.5 },
-    { "key": "nether_gold_ore", "name": "Oro del Nether", "cat": "nether", "all": "nether_gold_ore", "hardness": 3 },
-    { "key": "nether_quartz_ore", "name": "Cuarzo del Nether", "cat": "nether", "all": "nether_quartz_ore", "hardness": 3 },
-    { "key": "ancient_debris", "name": "Restos antiguos", "cat": "nether", "all": "ancient_debris", "hardness": 8 },
-    { "key": "sculk", "name": "Sculk", "cat": "nether", "all": "sculk", "hardness": 0.6, "glow": 0.3 }
+    {
+      "key": "grass",
+      "name": "Pasto",
+      "cat": "natural",
+      "top": "grass_block_top",
+      "side": "grass_block_side",
+      "bottom": "dirt",
+      "hardness": 0.6
+    },
+    {
+      "key": "dirt",
+      "name": "Tierra",
+      "cat": "natural",
+      "all": "dirt",
+      "hardness": 0.5
+    },
+    {
+      "key": "coarse_dirt",
+      "name": "Tierra gruesa",
+      "cat": "natural",
+      "all": "coarse_dirt",
+      "hardness": 0.5
+    },
+    {
+      "key": "podzol",
+      "name": "Podzol",
+      "cat": "natural",
+      "top": "podzol_top",
+      "side": "podzol_side",
+      "bottom": "dirt",
+      "hardness": 0.5
+    },
+    {
+      "key": "mycelium",
+      "name": "Micelio",
+      "cat": "natural",
+      "top": "mycelium_top",
+      "side": "mycelium_side",
+      "bottom": "dirt",
+      "hardness": 0.6
+    },
+    {
+      "key": "dirt_path",
+      "name": "Camino",
+      "cat": "natural",
+      "top": "dirt_path_top",
+      "side": "dirt_path_side",
+      "bottom": "dirt",
+      "hardness": 0.6
+    },
+    {
+      "key": "rooted_dirt",
+      "name": "Tierra con raíces",
+      "cat": "natural",
+      "all": "rooted_dirt",
+      "hardness": 0.5
+    },
+    {
+      "key": "mud",
+      "name": "Lodo",
+      "cat": "natural",
+      "all": "mud",
+      "hardness": 0.5
+    },
+    {
+      "key": "clay",
+      "name": "Arcilla",
+      "cat": "natural",
+      "all": "clay",
+      "hardness": 0.6
+    },
+    {
+      "key": "sand",
+      "name": "Arena",
+      "cat": "natural",
+      "all": "sand",
+      "hardness": 0.5
+    },
+    {
+      "key": "red_sand",
+      "name": "Arena roja",
+      "cat": "natural",
+      "all": "red_sand",
+      "hardness": 0.5
+    },
+    {
+      "key": "gravel",
+      "name": "Grava",
+      "cat": "natural",
+      "all": "gravel",
+      "hardness": 0.6
+    },
+    {
+      "key": "sandstone",
+      "name": "Arenisca",
+      "cat": "natural",
+      "top": "sandstone_top",
+      "side": "sandstone",
+      "bottom": "sandstone_bottom",
+      "hardness": 0.8
+    },
+    {
+      "key": "red_sandstone",
+      "name": "Arenisca roja",
+      "cat": "natural",
+      "top": "red_sandstone_top",
+      "side": "red_sandstone",
+      "bottom": "red_sandstone_bottom",
+      "hardness": 0.8
+    },
+    {
+      "key": "snow",
+      "name": "Nieve",
+      "cat": "natural",
+      "top": "snow",
+      "side": "grass_block_snow",
+      "bottom": "dirt",
+      "hardness": 0.2
+    },
+    {
+      "key": "snow_block",
+      "name": "Bloque de nieve",
+      "cat": "natural",
+      "all": "snow",
+      "hardness": 0.2
+    },
+    {
+      "key": "ice",
+      "name": "Hielo",
+      "cat": "natural",
+      "all": "ice",
+      "cutout": true,
+      "hardness": 0.5
+    },
+    {
+      "key": "packed_ice",
+      "name": "Hielo compacto",
+      "cat": "natural",
+      "all": "packed_ice",
+      "hardness": 0.5
+    },
+    {
+      "key": "blue_ice",
+      "name": "Hielo azul",
+      "cat": "natural",
+      "all": "blue_ice",
+      "hardness": 0.5
+    },
+    {
+      "key": "moss_block",
+      "name": "Bloque de musgo",
+      "cat": "natural",
+      "all": "moss_block",
+      "hardness": 0.3
+    },
+    {
+      "key": "hay_block",
+      "name": "Paca de heno",
+      "cat": "natural",
+      "top": "hay_block_top",
+      "side": "hay_block_side",
+      "hardness": 0.5
+    },
+    {
+      "key": "honeycomb_block",
+      "name": "Panal",
+      "cat": "natural",
+      "all": "honeycomb_block",
+      "hardness": 0.6
+    },
+    {
+      "key": "sponge",
+      "name": "Esponja",
+      "cat": "natural",
+      "all": "sponge",
+      "hardness": 0.6
+    },
+    {
+      "key": "bone_block",
+      "name": "Bloque de hueso",
+      "cat": "natural",
+      "top": "bone_block_top",
+      "side": "bone_block_side",
+      "hardness": 2
+    },
+    {
+      "key": "stone",
+      "name": "Piedra",
+      "cat": "stone",
+      "all": "stone",
+      "hardness": 1.5
+    },
+    {
+      "key": "cobblestone",
+      "name": "Adoquín",
+      "cat": "stone",
+      "all": "cobblestone",
+      "hardness": 1.5
+    },
+    {
+      "key": "mossy_cobblestone",
+      "name": "Adoquín musgoso",
+      "cat": "stone",
+      "all": "mossy_cobblestone",
+      "hardness": 1.5
+    },
+    {
+      "key": "andesite",
+      "name": "Andesita",
+      "cat": "stone",
+      "all": "andesite",
+      "hardness": 1.5
+    },
+    {
+      "key": "polished_andesite",
+      "name": "Andesita pulida",
+      "cat": "stone",
+      "all": "polished_andesite",
+      "hardness": 1.5
+    },
+    {
+      "key": "diorite",
+      "name": "Diorita",
+      "cat": "stone",
+      "all": "diorite",
+      "hardness": 1.5
+    },
+    {
+      "key": "polished_diorite",
+      "name": "Diorita pulida",
+      "cat": "stone",
+      "all": "polished_diorite",
+      "hardness": 1.5
+    },
+    {
+      "key": "granite",
+      "name": "Granito",
+      "cat": "stone",
+      "all": "granite",
+      "hardness": 1.5
+    },
+    {
+      "key": "polished_granite",
+      "name": "Granito pulido",
+      "cat": "stone",
+      "all": "polished_granite",
+      "hardness": 1.5
+    },
+    {
+      "key": "deepslate",
+      "name": "Pizarra profunda",
+      "cat": "stone",
+      "hardness": 3,
+      "top": "deepslate_top",
+      "side": "deepslate"
+    },
+    {
+      "key": "cobbled_deepslate",
+      "name": "Pizarra en bloques",
+      "cat": "stone",
+      "all": "cobbled_deepslate",
+      "hardness": 3
+    },
+    {
+      "key": "polished_deepslate",
+      "name": "Pizarra pulida",
+      "cat": "stone",
+      "all": "polished_deepslate",
+      "hardness": 3
+    },
+    {
+      "key": "tuff",
+      "name": "Toba",
+      "cat": "stone",
+      "all": "tuff",
+      "hardness": 1.5
+    },
+    {
+      "key": "calcite",
+      "name": "Calcita",
+      "cat": "stone",
+      "all": "calcite",
+      "hardness": 1.5
+    },
+    {
+      "key": "dripstone_block",
+      "name": "Bloque de estalactita",
+      "cat": "stone",
+      "all": "dripstone_block",
+      "hardness": 1.5
+    },
+    {
+      "key": "smooth_stone",
+      "name": "Piedra lisa",
+      "cat": "stone",
+      "all": "smooth_stone",
+      "hardness": 1.5
+    },
+    {
+      "key": "obsidian",
+      "name": "Obsidiana",
+      "cat": "stone",
+      "all": "obsidian",
+      "hardness": 8
+    },
+    {
+      "key": "crying_obsidian",
+      "name": "Obsidiana llorosa",
+      "cat": "stone",
+      "all": "crying_obsidian",
+      "hardness": 8,
+      "glow": 0.5
+    },
+    {
+      "key": "bedrock",
+      "name": "Roca madre",
+      "cat": "stone",
+      "all": "bedrock",
+      "hardness": -1
+    },
+    {
+      "key": "coal_ore",
+      "name": "Mena de carbón",
+      "cat": "ore",
+      "all": "coal_ore",
+      "hardness": 3
+    },
+    {
+      "key": "iron_ore",
+      "name": "Mena de hierro",
+      "cat": "ore",
+      "all": "iron_ore",
+      "hardness": 3
+    },
+    {
+      "key": "copper_ore",
+      "name": "Mena de cobre",
+      "cat": "ore",
+      "all": "copper_ore",
+      "hardness": 3
+    },
+    {
+      "key": "gold_ore",
+      "name": "Mena de oro",
+      "cat": "ore",
+      "all": "gold_ore",
+      "hardness": 3
+    },
+    {
+      "key": "redstone_ore",
+      "name": "Mena de redstone",
+      "cat": "ore",
+      "all": "redstone_ore",
+      "hardness": 3
+    },
+    {
+      "key": "lapis_ore",
+      "name": "Mena de lapislázuli",
+      "cat": "ore",
+      "all": "lapis_ore",
+      "hardness": 3
+    },
+    {
+      "key": "diamond_ore",
+      "name": "Mena de diamante",
+      "cat": "ore",
+      "all": "diamond_ore",
+      "hardness": 3
+    },
+    {
+      "key": "emerald_ore",
+      "name": "Mena de esmeralda",
+      "cat": "ore",
+      "all": "emerald_ore",
+      "hardness": 3
+    },
+    {
+      "key": "deepslate_coal_ore",
+      "name": "Carbón en pizarra",
+      "cat": "ore",
+      "all": "deepslate_coal_ore",
+      "hardness": 4.5
+    },
+    {
+      "key": "deepslate_iron_ore",
+      "name": "Hierro en pizarra",
+      "cat": "ore",
+      "all": "deepslate_iron_ore",
+      "hardness": 4.5
+    },
+    {
+      "key": "deepslate_copper_ore",
+      "name": "Cobre en pizarra",
+      "cat": "ore",
+      "all": "deepslate_copper_ore",
+      "hardness": 4.5
+    },
+    {
+      "key": "deepslate_gold_ore",
+      "name": "Oro en pizarra",
+      "cat": "ore",
+      "all": "deepslate_gold_ore",
+      "hardness": 4.5
+    },
+    {
+      "key": "deepslate_redstone_ore",
+      "name": "Redstone en pizarra",
+      "cat": "ore",
+      "all": "deepslate_redstone_ore",
+      "hardness": 4.5
+    },
+    {
+      "key": "deepslate_lapis_ore",
+      "name": "Lapislázuli en pizarra",
+      "cat": "ore",
+      "all": "deepslate_lapis_ore",
+      "hardness": 4.5
+    },
+    {
+      "key": "deepslate_diamond_ore",
+      "name": "Diamante en pizarra",
+      "cat": "ore",
+      "all": "deepslate_diamond_ore",
+      "hardness": 4.5
+    },
+    {
+      "key": "deepslate_emerald_ore",
+      "name": "Esmeralda en pizarra",
+      "cat": "ore",
+      "all": "deepslate_emerald_ore",
+      "hardness": 4.5
+    },
+    {
+      "key": "amethyst_block",
+      "name": "Bloque de amatista",
+      "cat": "ore",
+      "all": "amethyst_block",
+      "hardness": 1.5
+    },
+    {
+      "key": "budding_amethyst",
+      "name": "Amatista en brote",
+      "cat": "ore",
+      "all": "budding_amethyst",
+      "hardness": 1.5
+    },
+    {
+      "key": "iron_block",
+      "name": "Bloque de hierro",
+      "cat": "metal",
+      "all": "iron_block",
+      "hardness": 5
+    },
+    {
+      "key": "copper_block",
+      "name": "Bloque de cobre",
+      "cat": "metal",
+      "all": "copper_block",
+      "hardness": 5
+    },
+    {
+      "key": "gold_block",
+      "name": "Bloque de oro",
+      "cat": "metal",
+      "all": "gold_block",
+      "hardness": 5
+    },
+    {
+      "key": "redstone_block",
+      "name": "Bloque de redstone",
+      "cat": "metal",
+      "all": "redstone_block",
+      "hardness": 5
+    },
+    {
+      "key": "lapis_block",
+      "name": "Bloque de lapislázuli",
+      "cat": "metal",
+      "all": "lapis_block",
+      "hardness": 5
+    },
+    {
+      "key": "diamond_block",
+      "name": "Bloque de diamante",
+      "cat": "metal",
+      "all": "diamond_block",
+      "hardness": 5
+    },
+    {
+      "key": "emerald_block",
+      "name": "Bloque de esmeralda",
+      "cat": "metal",
+      "all": "emerald_block",
+      "hardness": 5
+    },
+    {
+      "key": "netherite_block",
+      "name": "Bloque de netherita",
+      "cat": "metal",
+      "all": "netherite_block",
+      "hardness": 5
+    },
+    {
+      "key": "coal_block",
+      "name": "Bloque de carbón",
+      "cat": "metal",
+      "all": "coal_block",
+      "hardness": 5
+    },
+    {
+      "key": "raw_iron_block",
+      "name": "Hierro en bruto",
+      "cat": "metal",
+      "all": "raw_iron_block",
+      "hardness": 5
+    },
+    {
+      "key": "raw_copper_block",
+      "name": "Cobre en bruto",
+      "cat": "metal",
+      "all": "raw_copper_block",
+      "hardness": 5
+    },
+    {
+      "key": "raw_gold_block",
+      "name": "Oro en bruto",
+      "cat": "metal",
+      "all": "raw_gold_block",
+      "hardness": 5
+    },
+    {
+      "key": "oxidized_copper",
+      "name": "Cobre oxidado",
+      "cat": "metal",
+      "all": "oxidized_copper",
+      "hardness": 5
+    },
+    {
+      "key": "cut_copper",
+      "name": "Cobre cortado",
+      "cat": "metal",
+      "all": "cut_copper",
+      "hardness": 5
+    },
+    {
+      "key": "water",
+      "name": "Agua",
+      "cat": "special",
+      "all": "water",
+      "liquid": true,
+      "hidden": true
+    },
+    {
+      "key": "lava",
+      "name": "Lava",
+      "cat": "special",
+      "all": "lava",
+      "liquid": true,
+      "glow": 1,
+      "hidden": true
+    },
+    {
+      "key": "oak_log",
+      "name": "Tronco de roble",
+      "cat": "wood",
+      "top": "oak_log_top",
+      "side": "oak_log",
+      "hardness": 2
+    },
+    {
+      "key": "stripped_oak_log",
+      "name": "Tronco pelado de roble",
+      "cat": "wood",
+      "top": "stripped_oak_log_top",
+      "side": "stripped_oak_log",
+      "hardness": 2
+    },
+    {
+      "key": "oak_planks",
+      "name": "Tablones de roble",
+      "cat": "wood",
+      "all": "oak_planks",
+      "hardness": 2
+    },
+    {
+      "key": "spruce_log",
+      "name": "Tronco de abeto",
+      "cat": "wood",
+      "top": "spruce_log_top",
+      "side": "spruce_log",
+      "hardness": 2
+    },
+    {
+      "key": "stripped_spruce_log",
+      "name": "Tronco pelado de abeto",
+      "cat": "wood",
+      "top": "stripped_spruce_log_top",
+      "side": "stripped_spruce_log",
+      "hardness": 2
+    },
+    {
+      "key": "spruce_planks",
+      "name": "Tablones de abeto",
+      "cat": "wood",
+      "all": "spruce_planks",
+      "hardness": 2
+    },
+    {
+      "key": "birch_log",
+      "name": "Tronco de abedul",
+      "cat": "wood",
+      "top": "birch_log_top",
+      "side": "birch_log",
+      "hardness": 2
+    },
+    {
+      "key": "stripped_birch_log",
+      "name": "Tronco pelado de abedul",
+      "cat": "wood",
+      "top": "stripped_birch_log_top",
+      "side": "stripped_birch_log",
+      "hardness": 2
+    },
+    {
+      "key": "birch_planks",
+      "name": "Tablones de abedul",
+      "cat": "wood",
+      "all": "birch_planks",
+      "hardness": 2
+    },
+    {
+      "key": "jungle_log",
+      "name": "Tronco de jungla",
+      "cat": "wood",
+      "top": "jungle_log_top",
+      "side": "jungle_log",
+      "hardness": 2
+    },
+    {
+      "key": "stripped_jungle_log",
+      "name": "Tronco pelado de jungla",
+      "cat": "wood",
+      "top": "stripped_jungle_log_top",
+      "side": "stripped_jungle_log",
+      "hardness": 2
+    },
+    {
+      "key": "jungle_planks",
+      "name": "Tablones de jungla",
+      "cat": "wood",
+      "all": "jungle_planks",
+      "hardness": 2
+    },
+    {
+      "key": "acacia_log",
+      "name": "Tronco de acacia",
+      "cat": "wood",
+      "top": "acacia_log_top",
+      "side": "acacia_log",
+      "hardness": 2
+    },
+    {
+      "key": "stripped_acacia_log",
+      "name": "Tronco pelado de acacia",
+      "cat": "wood",
+      "top": "stripped_acacia_log_top",
+      "side": "stripped_acacia_log",
+      "hardness": 2
+    },
+    {
+      "key": "acacia_planks",
+      "name": "Tablones de acacia",
+      "cat": "wood",
+      "all": "acacia_planks",
+      "hardness": 2
+    },
+    {
+      "key": "dark_oak_log",
+      "name": "Tronco de roble oscuro",
+      "cat": "wood",
+      "top": "dark_oak_log_top",
+      "side": "dark_oak_log",
+      "hardness": 2
+    },
+    {
+      "key": "stripped_dark_oak_log",
+      "name": "Tronco pelado de roble oscuro",
+      "cat": "wood",
+      "top": "stripped_dark_oak_log_top",
+      "side": "stripped_dark_oak_log",
+      "hardness": 2
+    },
+    {
+      "key": "dark_oak_planks",
+      "name": "Tablones de roble oscuro",
+      "cat": "wood",
+      "all": "dark_oak_planks",
+      "hardness": 2
+    },
+    {
+      "key": "mangrove_log",
+      "name": "Tronco de manglar",
+      "cat": "wood",
+      "top": "mangrove_log_top",
+      "side": "mangrove_log",
+      "hardness": 2
+    },
+    {
+      "key": "stripped_mangrove_log",
+      "name": "Tronco pelado de manglar",
+      "cat": "wood",
+      "top": "stripped_mangrove_log_top",
+      "side": "stripped_mangrove_log",
+      "hardness": 2
+    },
+    {
+      "key": "mangrove_planks",
+      "name": "Tablones de manglar",
+      "cat": "wood",
+      "all": "mangrove_planks",
+      "hardness": 2
+    },
+    {
+      "key": "cherry_log",
+      "name": "Tronco de cerezo",
+      "cat": "wood",
+      "top": "cherry_log_top",
+      "side": "cherry_log",
+      "hardness": 2
+    },
+    {
+      "key": "stripped_cherry_log",
+      "name": "Tronco pelado de cerezo",
+      "cat": "wood",
+      "top": "stripped_cherry_log_top",
+      "side": "stripped_cherry_log",
+      "hardness": 2
+    },
+    {
+      "key": "cherry_planks",
+      "name": "Tablones de cerezo",
+      "cat": "wood",
+      "all": "cherry_planks",
+      "hardness": 2
+    },
+    {
+      "key": "bookshelf",
+      "name": "Librero",
+      "cat": "wood",
+      "top": "oak_planks",
+      "side": "bookshelf",
+      "hardness": 1.5
+    },
+    {
+      "key": "crafting_table",
+      "name": "Mesa de trabajo",
+      "cat": "wood",
+      "top": "crafting_table_top",
+      "side": "crafting_table_front",
+      "bottom": "oak_planks",
+      "hardness": 2.5
+    },
+    {
+      "key": "barrel",
+      "name": "Barril",
+      "cat": "wood",
+      "top": "barrel_top",
+      "side": "barrel_side",
+      "bottom": "barrel_bottom",
+      "hardness": 2.5
+    },
+    {
+      "key": "note_block",
+      "name": "Bloque musical",
+      "cat": "wood",
+      "all": "note_block",
+      "hardness": 0.8
+    },
+    {
+      "key": "jukebox",
+      "name": "Tocadiscos",
+      "cat": "wood",
+      "top": "jukebox_top",
+      "side": "jukebox_side",
+      "hardness": 2
+    },
+    {
+      "key": "oak_leaves",
+      "name": "Hojas de roble",
+      "cat": "plants",
+      "all": "oak_leaves",
+      "cutout": true,
+      "hardness": 0.2
+    },
+    {
+      "key": "dark_leaves",
+      "name": "Hojas de roble oscuro",
+      "cat": "plants",
+      "all": "dark_oak_leaves",
+      "cutout": true,
+      "hardness": 0.2
+    },
+    {
+      "key": "birch_leaves",
+      "name": "Hojas de abedul",
+      "cat": "plants",
+      "all": "birch_leaves",
+      "cutout": true,
+      "hardness": 0.2
+    },
+    {
+      "key": "spruce_leaves",
+      "name": "Hojas de abeto",
+      "cat": "plants",
+      "all": "spruce_leaves",
+      "cutout": true,
+      "hardness": 0.2
+    },
+    {
+      "key": "jungle_leaves",
+      "name": "Hojas de jungla",
+      "cat": "plants",
+      "all": "jungle_leaves",
+      "cutout": true,
+      "hardness": 0.2
+    },
+    {
+      "key": "acacia_leaves",
+      "name": "Hojas de acacia",
+      "cat": "plants",
+      "all": "acacia_leaves",
+      "cutout": true,
+      "hardness": 0.2
+    },
+    {
+      "key": "flowering_leaves",
+      "name": "Hojas de azalea en flor",
+      "cat": "plants",
+      "all": "flowering_azalea_leaves",
+      "cutout": true,
+      "hardness": 0.2
+    },
+    {
+      "key": "cherry_leaves",
+      "name": "Hojas de cerezo",
+      "cat": "plants",
+      "all": "cherry_leaves",
+      "cutout": true,
+      "hardness": 0.2
+    },
+    {
+      "key": "azalea_leaves",
+      "name": "Hojas de azalea",
+      "cat": "plants",
+      "all": "azalea_leaves",
+      "cutout": true,
+      "hardness": 0.2
+    },
+    {
+      "key": "cactus",
+      "name": "Cactus",
+      "cat": "plants",
+      "top": "cactus_top",
+      "side": "cactus_side",
+      "bottom": "cactus_bottom",
+      "cutout": true,
+      "hardness": 0.4
+    },
+    {
+      "key": "melon",
+      "name": "Sandía",
+      "cat": "plants",
+      "top": "melon_top",
+      "side": "melon_side",
+      "hardness": 1
+    },
+    {
+      "key": "pumpkin",
+      "name": "Calabaza",
+      "cat": "plants",
+      "top": "pumpkin_top",
+      "side": "pumpkin_side",
+      "hardness": 1
+    },
+    {
+      "key": "carved_pumpkin",
+      "name": "Calabaza tallada",
+      "cat": "plants",
+      "top": "pumpkin_top",
+      "side": "carved_pumpkin",
+      "hardness": 1
+    },
+    {
+      "key": "jack_o_lantern",
+      "name": "Calabaza con luz",
+      "cat": "plants",
+      "top": "pumpkin_top",
+      "side": "jack_o_lantern",
+      "hardness": 1,
+      "glow": 1
+    },
+    {
+      "key": "red_mushroom",
+      "name": "Hongo rojo",
+      "cat": "plants",
+      "all": "red_mushroom_block",
+      "hardness": 0.3
+    },
+    {
+      "key": "brown_mushroom",
+      "name": "Hongo café",
+      "cat": "plants",
+      "all": "brown_mushroom_block",
+      "hardness": 0.3
+    },
+    {
+      "key": "mushroom_stem",
+      "name": "Tallo de hongo",
+      "cat": "plants",
+      "all": "mushroom_stem",
+      "hardness": 0.3
+    },
+    {
+      "key": "bamboo_block",
+      "name": "Bloque de bambú",
+      "cat": "plants",
+      "top": "bamboo_block_top",
+      "side": "bamboo_block",
+      "hardness": 1
+    },
+    {
+      "key": "dried_kelp",
+      "name": "Alga seca",
+      "cat": "plants",
+      "top": "dried_kelp_top",
+      "side": "dried_kelp_side",
+      "hardness": 0.5
+    },
+    {
+      "key": "bricks",
+      "name": "Ladrillos",
+      "cat": "building",
+      "all": "bricks",
+      "hardness": 1.5
+    },
+    {
+      "key": "stone_bricks",
+      "name": "Ladrillos de piedra",
+      "cat": "building",
+      "all": "stone_bricks",
+      "hardness": 1.5
+    },
+    {
+      "key": "mossy_stone_bricks",
+      "name": "Ladrillos musgosos",
+      "cat": "building",
+      "all": "mossy_stone_bricks",
+      "hardness": 1.5
+    },
+    {
+      "key": "cracked_stone_bricks",
+      "name": "Ladrillos agrietados",
+      "cat": "building",
+      "all": "cracked_stone_bricks",
+      "hardness": 1.5
+    },
+    {
+      "key": "chiseled_stone_bricks",
+      "name": "Ladrillos cincelados",
+      "cat": "building",
+      "all": "chiseled_stone_bricks",
+      "hardness": 1.5
+    },
+    {
+      "key": "deepslate_bricks",
+      "name": "Ladrillos de pizarra",
+      "cat": "building",
+      "all": "deepslate_bricks",
+      "hardness": 1.5
+    },
+    {
+      "key": "deepslate_tiles",
+      "name": "Baldosas de pizarra",
+      "cat": "building",
+      "all": "deepslate_tiles",
+      "hardness": 1.5
+    },
+    {
+      "key": "mud_bricks",
+      "name": "Ladrillos de lodo",
+      "cat": "building",
+      "all": "mud_bricks",
+      "hardness": 1.5
+    },
+    {
+      "key": "tuff_bricks",
+      "name": "Ladrillos de toba",
+      "cat": "building",
+      "all": "tuff_bricks",
+      "hardness": 1.5
+    },
+    {
+      "key": "polished_blackstone_bricks",
+      "name": "Ladrillos de piedra negra",
+      "cat": "building",
+      "all": "polished_blackstone_bricks",
+      "hardness": 1.5
+    },
+    {
+      "key": "end_stone_bricks",
+      "name": "Ladrillos del End",
+      "cat": "building",
+      "all": "end_stone_bricks",
+      "hardness": 1.5
+    },
+    {
+      "key": "quartz_bricks",
+      "name": "Ladrillos de cuarzo",
+      "cat": "building",
+      "all": "quartz_bricks",
+      "hardness": 1.5
+    },
+    {
+      "key": "prismarine",
+      "name": "Prismarina",
+      "cat": "building",
+      "all": "prismarine",
+      "hardness": 1.5
+    },
+    {
+      "key": "prismarine_bricks",
+      "name": "Ladrillos de prismarina",
+      "cat": "building",
+      "all": "prismarine_bricks",
+      "hardness": 1.5
+    },
+    {
+      "key": "dark_prismarine",
+      "name": "Prismarina oscura",
+      "cat": "building",
+      "all": "dark_prismarine",
+      "hardness": 1.5
+    },
+    {
+      "key": "sea_lantern",
+      "name": "Linterna marina",
+      "cat": "building",
+      "all": "sea_lantern",
+      "hardness": 1.5,
+      "glow": 1
+    },
+    {
+      "key": "glowstone",
+      "name": "Piedra luminosa",
+      "cat": "building",
+      "all": "glowstone",
+      "hardness": 0.3,
+      "glow": 1
+    },
+    {
+      "key": "glass",
+      "name": "Cristal",
+      "cat": "building",
+      "all": "glass",
+      "hardness": 0.3,
+      "cutout": true
+    },
+    {
+      "key": "tinted_glass",
+      "name": "Cristal tintado",
+      "cat": "building",
+      "all": "tinted_glass",
+      "hardness": 0.3,
+      "cutout": true
+    },
+    {
+      "key": "smooth_basalt",
+      "name": "Basalto liso",
+      "cat": "building",
+      "all": "smooth_basalt",
+      "hardness": 1.5
+    },
+    {
+      "key": "cut_sandstone",
+      "name": "Arenisca cortada",
+      "cat": "building",
+      "all": "cut_sandstone",
+      "hardness": 1.5
+    },
+    {
+      "key": "chiseled_sandstone",
+      "name": "Arenisca cincelada",
+      "cat": "building",
+      "all": "chiseled_sandstone",
+      "hardness": 1.5
+    },
+    {
+      "key": "chiseled_deepslate",
+      "name": "Pizarra cincelada",
+      "cat": "building",
+      "all": "chiseled_deepslate",
+      "hardness": 1.5
+    },
+    {
+      "key": "chiseled_quartz_block",
+      "name": "Cuarzo cincelado",
+      "cat": "building",
+      "all": "chiseled_quartz_block",
+      "hardness": 1.5
+    },
+    {
+      "key": "quartz_block",
+      "name": "Bloque de cuarzo",
+      "cat": "building",
+      "top": "quartz_block_top",
+      "side": "quartz_block_side",
+      "bottom": "quartz_block_bottom",
+      "hardness": 1.5
+    },
+    {
+      "key": "quartz_pillar",
+      "name": "Pilar de cuarzo",
+      "cat": "building",
+      "top": "quartz_pillar_top",
+      "side": "quartz_pillar",
+      "hardness": 1.5
+    },
+    {
+      "key": "purpur_block",
+      "name": "Bloque de purpur",
+      "cat": "building",
+      "all": "purpur_block",
+      "hardness": 1.5
+    },
+    {
+      "key": "purpur_pillar",
+      "name": "Pilar de purpur",
+      "cat": "building",
+      "top": "purpur_pillar_top",
+      "side": "purpur_pillar",
+      "hardness": 1.5
+    },
+    {
+      "key": "tnt",
+      "name": "TNT",
+      "cat": "building",
+      "top": "tnt_top",
+      "side": "tnt_side",
+      "bottom": "tnt_bottom",
+      "hardness": 0.1
+    },
+    {
+      "key": "furnace",
+      "name": "Horno",
+      "cat": "building",
+      "top": "furnace_top",
+      "side": "furnace_front",
+      "bottom": "furnace_top",
+      "hardness": 3.5
+    },
+    {
+      "key": "smooth_sandstone",
+      "name": "Arenisca lisa",
+      "cat": "building",
+      "all": "sandstone_top",
+      "hardness": 1.5
+    },
+    {
+      "key": "target",
+      "name": "Diana",
+      "cat": "building",
+      "top": "target_top",
+      "side": "target_side",
+      "hardness": 0.5
+    },
+    {
+      "key": "sculk",
+      "name": "Sculk",
+      "cat": "building",
+      "all": "sculk",
+      "hardness": 0.6,
+      "glow": 0.3
+    },
+    {
+      "key": "white_wool",
+      "name": "Lana blanca",
+      "cat": "wool",
+      "all": "white_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "light_gray_wool",
+      "name": "Lana gris claro",
+      "cat": "wool",
+      "all": "light_gray_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "gray_wool",
+      "name": "Lana gris",
+      "cat": "wool",
+      "all": "gray_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "black_wool",
+      "name": "Lana negra",
+      "cat": "wool",
+      "all": "black_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "brown_wool",
+      "name": "Lana café",
+      "cat": "wool",
+      "all": "brown_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "red_wool",
+      "name": "Lana roja",
+      "cat": "wool",
+      "all": "red_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "orange_wool",
+      "name": "Lana naranja",
+      "cat": "wool",
+      "all": "orange_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "yellow_wool",
+      "name": "Lana amarilla",
+      "cat": "wool",
+      "all": "yellow_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "lime_wool",
+      "name": "Lana verde lima",
+      "cat": "wool",
+      "all": "lime_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "green_wool",
+      "name": "Lana verde",
+      "cat": "wool",
+      "all": "green_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "cyan_wool",
+      "name": "Lana cian",
+      "cat": "wool",
+      "all": "cyan_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "light_blue_wool",
+      "name": "Lana azul claro",
+      "cat": "wool",
+      "all": "light_blue_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "blue_wool",
+      "name": "Lana azul",
+      "cat": "wool",
+      "all": "blue_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "purple_wool",
+      "name": "Lana morada",
+      "cat": "wool",
+      "all": "purple_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "magenta_wool",
+      "name": "Lana magenta",
+      "cat": "wool",
+      "all": "magenta_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "pink_wool",
+      "name": "Lana rosa",
+      "cat": "wool",
+      "all": "pink_wool",
+      "hardness": 0.8
+    },
+    {
+      "key": "white_concrete",
+      "name": "Hormigón blonca",
+      "cat": "concrete",
+      "all": "white_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "light_gray_concrete",
+      "name": "Hormigón gris claro",
+      "cat": "concrete",
+      "all": "light_gray_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "gray_concrete",
+      "name": "Hormigón gris",
+      "cat": "concrete",
+      "all": "gray_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "black_concrete",
+      "name": "Hormigón negro",
+      "cat": "concrete",
+      "all": "black_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "brown_concrete",
+      "name": "Hormigón café",
+      "cat": "concrete",
+      "all": "brown_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "red_concrete",
+      "name": "Hormigón rojo",
+      "cat": "concrete",
+      "all": "red_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "orange_concrete",
+      "name": "Hormigón noranja",
+      "cat": "concrete",
+      "all": "orange_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "yellow_concrete",
+      "name": "Hormigón omarilla",
+      "cat": "concrete",
+      "all": "yellow_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "lime_concrete",
+      "name": "Hormigón verde limo",
+      "cat": "concrete",
+      "all": "lime_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "green_concrete",
+      "name": "Hormigón verde",
+      "cat": "concrete",
+      "all": "green_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "cyan_concrete",
+      "name": "Hormigón cian",
+      "cat": "concrete",
+      "all": "cyan_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "light_blue_concrete",
+      "name": "Hormigón azul claro",
+      "cat": "concrete",
+      "all": "light_blue_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "blue_concrete",
+      "name": "Hormigón azul",
+      "cat": "concrete",
+      "all": "blue_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "purple_concrete",
+      "name": "Hormigón moroda",
+      "cat": "concrete",
+      "all": "purple_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "magenta_concrete",
+      "name": "Hormigón mogenta",
+      "cat": "concrete",
+      "all": "magenta_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "pink_concrete",
+      "name": "Hormigón roso",
+      "cat": "concrete",
+      "all": "pink_concrete",
+      "hardness": 1.8
+    },
+    {
+      "key": "white_terracotta",
+      "name": "Terracota blanca",
+      "cat": "concrete",
+      "all": "white_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "light_gray_terracotta",
+      "name": "Terracota gris claro",
+      "cat": "concrete",
+      "all": "light_gray_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "gray_terracotta",
+      "name": "Terracota gris",
+      "cat": "concrete",
+      "all": "gray_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "black_terracotta",
+      "name": "Terracota negra",
+      "cat": "concrete",
+      "all": "black_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "brown_terracotta",
+      "name": "Terracota café",
+      "cat": "concrete",
+      "all": "brown_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "red_terracotta",
+      "name": "Terracota roja",
+      "cat": "concrete",
+      "all": "red_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "orange_terracotta",
+      "name": "Terracota naranja",
+      "cat": "concrete",
+      "all": "orange_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "yellow_terracotta",
+      "name": "Terracota amarilla",
+      "cat": "concrete",
+      "all": "yellow_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "lime_terracotta",
+      "name": "Terracota verde lima",
+      "cat": "concrete",
+      "all": "lime_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "green_terracotta",
+      "name": "Terracota verde",
+      "cat": "concrete",
+      "all": "green_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "cyan_terracotta",
+      "name": "Terracota cian",
+      "cat": "concrete",
+      "all": "cyan_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "light_blue_terracotta",
+      "name": "Terracota azul claro",
+      "cat": "concrete",
+      "all": "light_blue_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "blue_terracotta",
+      "name": "Terracota azul",
+      "cat": "concrete",
+      "all": "blue_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "purple_terracotta",
+      "name": "Terracota morada",
+      "cat": "concrete",
+      "all": "purple_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "magenta_terracotta",
+      "name": "Terracota magenta",
+      "cat": "concrete",
+      "all": "magenta_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "pink_terracotta",
+      "name": "Terracota rosa",
+      "cat": "concrete",
+      "all": "pink_terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "terracotta",
+      "name": "Terracota",
+      "cat": "concrete",
+      "all": "terracotta",
+      "hardness": 1.2
+    },
+    {
+      "key": "netherrack",
+      "name": "Piedra del Nether",
+      "cat": "nether",
+      "all": "netherrack",
+      "hardness": 0.5
+    },
+    {
+      "key": "soul_sand",
+      "name": "Arena de almas",
+      "cat": "nether",
+      "all": "soul_sand",
+      "hardness": 0.5
+    },
+    {
+      "key": "soul_soil",
+      "name": "Tierra de almas",
+      "cat": "nether",
+      "all": "soul_soil",
+      "hardness": 0.5
+    },
+    {
+      "key": "magma",
+      "name": "Magma",
+      "cat": "nether",
+      "all": "magma",
+      "hardness": 0.5,
+      "glow": 0.5
+    },
+    {
+      "key": "nether_bricks",
+      "name": "Ladrillos del Nether",
+      "cat": "nether",
+      "all": "nether_bricks",
+      "hardness": 0.5
+    },
+    {
+      "key": "red_nether_bricks",
+      "name": "Ladrillos rojos del Nether",
+      "cat": "nether",
+      "all": "red_nether_bricks",
+      "hardness": 0.5
+    },
+    {
+      "key": "nether_gold_ore",
+      "name": "Oro del Nether",
+      "cat": "nether",
+      "all": "nether_gold_ore",
+      "hardness": 0.5
+    },
+    {
+      "key": "nether_quartz_ore",
+      "name": "Cuarzo del Nether",
+      "cat": "nether",
+      "all": "nether_quartz_ore",
+      "hardness": 0.5
+    },
+    {
+      "key": "ancient_debris",
+      "name": "Restos antiguos",
+      "cat": "nether",
+      "top": "ancient_debris_top",
+      "side": "ancient_debris_side",
+      "hardness": 8
+    },
+    {
+      "key": "blackstone",
+      "name": "Piedra negra",
+      "cat": "nether",
+      "all": "blackstone",
+      "hardness": 0.5
+    },
+    {
+      "key": "basalt",
+      "name": "Basalto",
+      "cat": "nether",
+      "top": "basalt_top",
+      "side": "basalt_side",
+      "hardness": 1.5
+    },
+    {
+      "key": "crimson_nylium",
+      "name": "Nylium carmesí",
+      "cat": "nether",
+      "top": "crimson_nylium",
+      "side": "crimson_nylium_side",
+      "bottom": "netherrack",
+      "hardness": 0.4
+    },
+    {
+      "key": "warped_nylium",
+      "name": "Nylium distorsionado",
+      "cat": "nether",
+      "top": "warped_nylium",
+      "side": "warped_nylium_side",
+      "bottom": "netherrack",
+      "hardness": 0.4
+    },
+    {
+      "key": "crimson_planks",
+      "name": "Tablones carmesí",
+      "cat": "nether",
+      "all": "crimson_planks",
+      "hardness": 0.5
+    },
+    {
+      "key": "warped_planks",
+      "name": "Tablones distorsionados",
+      "cat": "nether",
+      "all": "warped_planks",
+      "hardness": 0.5
+    },
+    {
+      "key": "shroomlight",
+      "name": "Luz de hongo",
+      "cat": "nether",
+      "all": "shroomlight",
+      "hardness": 0.5,
+      "glow": 1
+    },
+    {
+      "key": "end_stone",
+      "name": "Piedra del End",
+      "cat": "nether",
+      "all": "end_stone",
+      "hardness": 0.5
+    }
   ]
 }

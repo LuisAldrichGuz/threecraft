@@ -142,3 +142,5 @@ button { font-family: var(--font); }
   .slot { width: 38px; height: 38px; padding: 4px; }
   .controls { grid-template-columns: 1fr; }
 }
+
+.credit a { color: #ffffa0; text-decoration: underline; }
