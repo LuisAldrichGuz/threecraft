@@ -24,6 +24,8 @@ export interface BlockDef {
   glow: number
   /** no aparece en el inventario */
   hidden: boolean
+  /** líquidos: 0 fuente, 1-7 corriente (más = menos agua), 8 cayendo */
+  level: number
 }
 
 interface RawBlock {
@@ -39,6 +41,7 @@ interface RawBlock {
   glow?: number
   hardness?: number
   hidden?: boolean
+  level?: number
 }
 
 export const CATEGORIES: [string, string][] = catalog.categories as [string, string][]
@@ -46,7 +49,7 @@ export const CATEGORIES: [string, string][] = catalog.categories as [string, str
 export const BLOCKS: BlockDef[] = [
   {
     id: 0, key: 'air', name: 'Aire', category: 'special', textures: { top: 'stone', side: 'stone', bottom: 'stone' },
-    opaque: false, cutout: false, liquid: false, hardness: 0, glow: 0, hidden: true,
+    opaque: false, cutout: false, liquid: false, hardness: 0, glow: 0, hidden: true, level: 0,
   },
   ...(catalog.blocks as RawBlock[]).map((b, i): BlockDef => {
     const top = b.top ?? b.all ?? '121'
@@ -64,6 +67,7 @@ export const BLOCKS: BlockDef[] = [
       hardness: b.hardness === -1 || b.liquid ? Infinity : (b.hardness ?? 1),
       glow: b.glow ?? 0,
       hidden: !!b.hidden,
+      level: b.level ?? 0,
     }
   }),
 ]
@@ -116,6 +120,7 @@ export const Block = {
   DEEPSLATE_LAPIS_ORE: idOf('deepslate_lapis_ore'),
   DEEPSLATE_EMERALD_ORE: idOf('deepslate_emerald_ore'),
   WATER: idOf('water'),
+  WATER_FALL: idOf('water_fall'),
   LAVA: idOf('lava'),
   OAK_LOG: idOf('oak_log'),
   OAK_LEAVES: idOf('oak_leaves'),
@@ -140,6 +145,10 @@ export const Block = {
 export const blockDef = (id: number): BlockDef => BLOCK_BY_ID[id] ?? BLOCK_BY_ID[Block.STONE]
 export const isOpaque = (id: number) => BLOCK_BY_ID[id]?.opaque === true
 export const isLiquid = (id: number) => BLOCK_BY_ID[id]?.liquid === true
+export const isWater = (id: number) => id === Block.WATER || BLOCK_BY_KEY.get('water_1')!.id <= id && id <= Block.WATER_FALL
+/** el id del agua corriente con ese nivel (1-7), 8 = cayendo */
+export const waterLevel = (level: number): number => (level >= 8 ? Block.WATER_FALL : level <= 0 ? Block.WATER : BLOCK_BY_KEY.get(`water_${level}`)!.id)
+export const levelOf = (id: number): number => BLOCK_BY_ID[id]?.level ?? 0
 /** sólido para chocar: todo menos aire y líquidos */
 export const isSolid = (id: number) => id !== 0 && !isLiquid(id)
 

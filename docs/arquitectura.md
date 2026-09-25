@@ -91,13 +91,28 @@ hongos y adoquín musgoso sueltos.
   orientación del torso (de pie = 96 % de la altura, como `primeraPersona.ts`).
   Tercera atrás y de frente con raycast para no cruzar paredes y suavizado.
 
+## Bloques que reaccionan
+
+- **Arena / grava** (`fallingBlocks.ts`): al cambiar una celda se mira si ahí o
+  encima hay un bloque con gravedad sin apoyo; se quita del mundo y cae como
+  malla con gravedad; al tocar suelo se recoloca (y avisa a sus vecinos).
+- **Agua** (`liquids.ts`): ids `water` (fuente, nivel 0), `water_1..7`
+  (corriente, cada paso pierde uno) y `water_fall` (8, cayendo), todos con la
+  misma textura; la altura de la superficie sale del nivel en el mallado. Cada
+  0.25 s se revisan sólo las celdas tocadas (tope 1500): hacia abajo primero,
+  si hay suelo se extiende a los lados, una corriente sin agua encima ni vecino
+  con más agua se seca un nivel por paso, y dos fuentes pegadas con suelo hacen
+  una fuente nueva. Lava queda estática.
+- **Sonido** (`audio.ts`): el material de un bloque se deduce de su `key`
+  (madera, piedra, pasto, arena, nieve, cristal, metal, lana, grava, agua) y
+  cada acción elige una toma al azar con tono variado.
+
 ## Texturas y catálogo
 
-- `public/textures/<nombre>.png`: 61 del pack `Minecraft-Patterns` (bajadas de
-  4000×4000 a 16×16 muestreando el centro de cada celda: el pixel real era 16)
-  y 23 del pack viejo de 611 (por número) para lo que el nuevo no trae: hojas,
-  agua, lava, tapa del tronco, abedul y abeto, nieve, hielo, cristal, cactus,
-  sandía, calabaza.
+- `public/textures/<nombre>.png`: **Faithful 32x** (rama Java 1.21.11), sólo
+  los bloques del catálogo, copiados por nombre; de las animadas (agua, lava)
+  el primer fotograma; pasto, hojas y agua tintados con los colores de bioma
+  de Minecraft (en el pack vienen en gris). Licencia y créditos en la carpeta.
 - `catalog.json` es la fuente: `key`, `name`, `cat`, `all`/`top`/`side`/`bottom`,
   `hardness` (−1 = irrompible), `cutout`, `liquid`, `glow`, `hidden`. El atlas se
   arma con un borde de 1 px por tile para que el filtrado no sangre.

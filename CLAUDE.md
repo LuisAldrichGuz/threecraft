@@ -12,7 +12,9 @@ sin librerías de motor. Este archivo es el **índice**; el detalle vive en
 |------|--------|
 | Mundo infinito por chunks (16×128×16), generado y mallado en **Web Workers** | ✅ |
 | Generador estilo 1.18: continentalidad + erosión + picos con splines, 10 biomas, cuevas espagueti y queso, menas por profundidad (y en pizarra), roca madre, árboles que no se cortan en el borde | ✅ |
-| Texturas: pack `Minecraft-Patterns` (61 bloques, 4000→16 px) + 23 del pack viejo para lo que falta · **84 bloques** en `catalog.json` | ✅ |
+| Texturas: **Faithful 32x** (Faithful License, crédito en pausa y README) con tintes de bioma horneados · **224 bloques** en `catalog.json` | ✅ |
+| Sonidos **Kenney (CC0)**: pasos por material, golpes, romper/poner, aterrizar, chapoteo, UI | ✅ |
+| Arena, arena roja y grava **caen**; **agua con niveles** como Minecraft (fuente, corriente 1-7, cayendo, fuente infinita, se seca sin fuente) | ✅ |
 | Luz por vértice (sol por columna + propagación desde lo que brilla), oclusión ambiental, sombras del sol (PCF, siguen al jugador), rayos de sol, cielo por shader, nubes de prismas 12×12×4, noche con luna | ✅ |
 | Agua con shader: olas, Fresnel, brillo del sol, ondas y chapoteo al entrar | ✅ |
 | Jugador: skin de Minecraft 64×64 (las 21 del portafolio), rig con cadera/torso/cabeza/brazos, poses idle·walk·run·crouch·jump·fall·land·swim·fly con transiciones | ✅ |
@@ -55,11 +57,15 @@ src/game/
   godrays.ts       los rayos de sol (dos pasadas a ¼ de resolución)
   waterMaterial.ts el shader del agua
   splash.ts        gotas al entrar al agua
+  audio.ts         sonidos (Kenney CC0): familias por material, pool de 12 fuentes
+  fallingBlocks.ts arena/grava que caen como entidad y se recolocan
+  liquids.ts       el agua por niveles, en pasos de 0.25 s, sólo celdas tocadas
   raycast.ts       DDA por voxels para saber qué bloque miras
   icons.ts         iconos isométricos de cada bloque para la UI
   storage.ts       localStorage: chunks editados, jugador, ajustes
 src/App.tsx, App.css   la UI (React), estilo Minecraft con CSS propio
-public/textures/       las 84 texturas por nombre (o número, las del pack viejo)
+public/textures/       Faithful 32x por nombre de Minecraft (+ LICENSE-FAITHFUL.txt y CREDITS.md)
+public/sounds/         Kenney CC0 (+ LICENSE.md)
 public/skins/          las 21 skins
 ```
 
@@ -68,9 +74,16 @@ public/skins/          las 21 skins
 1. **`npm run build` limpio** antes de dar algo por hecho. `tsc` va con
    `erasableSyntaxOnly`: nada de `enum` ni de `constructor(private x)`.
 2. **Un bloque nuevo es una línea en `catalog.json`** y su textura en
-   `public/textures/`. El id es la posición en la lista: **no se reordena** el
-   catálogo o los mundos guardados cambian de bloques. Si el código lo necesita
-   por nombre, va en `Block` (`blocks.ts`).
+   `public/textures/` (nombre de Minecraft, 32 px, de Faithful). El id es la
+   posición en la lista: **no se reordena** el catálogo o los mundos guardados
+   cambian de bloques; lo nuevo va **al final** (así entraron los niveles de agua).
+   Si el código lo necesita por nombre, va en `Block` (`blocks.ts`).
+   ⚠️ Pasto, hojas y agua vienen en gris en Faithful (el juego los tiñe por
+   bioma): el tinte se hornea al importar, no en el shader.
+   ⚠️ Cambios de bloques que deban reaccionar (arena que cae, agua) pasan por
+   `afterBlockChange` en `Game.ts`: sin eso el vecino no se entera.
+   ⚠️ Licencias: Faithful pide crédito + enlace (está en pausa/README); los
+   sonidos son CC0. Nada nuevo entra sin licencia comprobada en su página.
 3. **Todo lo que hace el jugador se ve en el muñeco.** Una mecánica nueva
    trae su pose en `playerModel.ts` (es el mismo muñeco en primera y tercera).
    ⚠️ En el rig, **rotación X negativa inclina hacia delante** (el muñeco mira a

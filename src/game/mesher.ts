@@ -299,13 +299,24 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
 
         if (def.liquid) {
           const above = field.block(x, y + 1, z)
-          const surface = above !== block
+          const aboveLiquid = above !== UNKNOWN && blockDef(above).liquid
+          // la altura del agua depende del nivel: fuente 0.875, corriente cada vez más baja, cayendo llena la celda
+          const lvl = def.level
+          const height = aboveLiquid ? 1 : lvl >= 8 ? 1 : lvl === 0 ? 0.875 : Math.max(0.12, 0.875 - lvl * 0.105)
           for (const f of FACES) {
             const n = field.block(x + f.dir[0], y + f.dir[1], z + f.dir[2])
-            if (n === UNKNOWN || n === block || isOpaque(n)) continue
+            if (n === UNKNOWN || isOpaque(n)) continue
+            const nLiquid = blockDef(n).liquid
+            if (f.dir[1] === 1 && nLiquid) continue
             if (f.dir[1] === -1 && n !== Block.AIR) continue
+            // entre dos aguas sólo se dibuja el escalón si la vecina es más baja
+            if (f.dir[1] === 0 && nLiquid) {
+              const nl = blockDef(n).level
+              const nh = nl >= 8 ? 1 : nl === 0 ? 0.875 : Math.max(0.12, 0.875 - nl * 0.105)
+              if (nh >= height - 0.01) continue
+            }
             const light = f.dir[1] === 1 ? field.light(x, y + 1, z) : Math.max(field.light(x, y, z), field.light(x + f.dir[0], y + f.dir[1], z + f.dir[2]))
-            water.quad(x, y, z, f, uvFor(block, f.face), NO_AO, light, surface ? 0.875 : 1)
+            water.quad(x, y, z, f, uvFor(block, f.face), NO_AO, light, height)
           }
           continue
         }

@@ -14,6 +14,7 @@ import { WaterMaterial } from './waterMaterial'
 import { Splash } from './splash'
 import { GameAudio } from './audio'
 import { FallingBlocks } from './fallingBlocks'
+import { Liquids } from './liquids'
 import { raycastVoxel } from './raycast'
 import { renderBlockIcons } from './icons'
 import { loadPlayer, loadSettings, savePlayer, saveSettings, type Settings } from './storage'
@@ -123,6 +124,7 @@ export class Game {
   private splash = new Splash()
   private audio!: GameAudio
   private falling!: FallingBlocks
+  private liquids!: Liquids
   private stepDistance = 0
   private hitTimer = 0
   private lastPos = new THREE.Vector3()
@@ -239,6 +241,8 @@ export class Game {
 
     this.sky = new Sky(this.scene, this.settings.shadows, this.settings.seed)
     this.audio = new GameAudio(this.camera)
+    this.liquids = new Liquids(this.world)
+    this.liquids.onChange = (x, _y, z) => this.markDirtyAround(x, z)
     this.falling = new FallingBlocks(this.scene, this.world, this.atlas, this.heldMaterial)
     this.falling.onLand = (x, y, z, block) => {
       this.markDirtyAround(x, z)
@@ -364,6 +368,7 @@ export class Game {
   private afterBlockChange(x: number, y: number, z: number) {
     this.falling.check(x, y + 1, z)
     this.falling.check(x, y, z)
+    this.liquids.touch(x, y, z)
   }
 
   private markDirtyAround(x: number, z: number) {
@@ -765,6 +770,7 @@ export class Game {
     }
     this.splash.update(dt)
     this.falling.update(dt)
+    this.liquids.update(dt)
 
     this.renderer.render(this.scene, this.camera)
     if (!this.player.headInWater) {

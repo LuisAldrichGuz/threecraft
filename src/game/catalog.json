@@ -592,11 +592,12 @@
     },
     {
       "key": "water",
-      "name": "Agua",
+      "name": "Agua (fuente)",
       "cat": "special",
       "all": "water",
       "liquid": true,
-      "hidden": true
+      "hidden": false,
+      "level": 0
     },
     {
       "key": "lava",
@@ -605,7 +606,7 @@
       "all": "lava",
       "liquid": true,
       "glow": 1,
-      "hidden": true
+      "hidden": false
     },
     {
       "key": "oak_log",
@@ -1698,6 +1699,78 @@
       "cat": "nether",
       "all": "end_stone",
       "hardness": 0.5
+    },
+    {
+      "key": "water_1",
+      "name": "Agua",
+      "cat": "special",
+      "all": "water",
+      "liquid": true,
+      "hidden": true,
+      "level": 1
+    },
+    {
+      "key": "water_2",
+      "name": "Agua",
+      "cat": "special",
+      "all": "water",
+      "liquid": true,
+      "hidden": true,
+      "level": 2
+    },
+    {
+      "key": "water_3",
+      "name": "Agua",
+      "cat": "special",
+      "all": "water",
+      "liquid": true,
+      "hidden": true,
+      "level": 3
+    },
+    {
+      "key": "water_4",
+      "name": "Agua",
+      "cat": "special",
+      "all": "water",
+      "liquid": true,
+      "hidden": true,
+      "level": 4
+    },
+    {
+      "key": "water_5",
+      "name": "Agua",
+      "cat": "special",
+      "all": "water",
+      "liquid": true,
+      "hidden": true,
+      "level": 5
+    },
+    {
+      "key": "water_6",
+      "name": "Agua",
+      "cat": "special",
+      "all": "water",
+      "liquid": true,
+      "hidden": true,
+      "level": 6
+    },
+    {
+      "key": "water_7",
+      "name": "Agua",
+      "cat": "special",
+      "all": "water",
+      "liquid": true,
+      "hidden": true,
+      "level": 7
+    },
+    {
+      "key": "water_fall",
+      "name": "Agua",
+      "cat": "special",
+      "all": "water",
+      "liquid": true,
+      "hidden": true,
+      "level": 8
     }
   ]
 }
