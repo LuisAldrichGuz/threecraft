@@ -32,7 +32,7 @@ const SKY_FRAG = /* glsl */ `
     float t = pow(1.0 - h, 2.2);
     vec3 c = mix(zenith, horizon, t);
     float d = max(dot(normalize(vDir), sunDir), 0.0);
-    c += sunColor * (pow(d, 64.0) * 0.9 + pow(d, 8.0) * 0.18) * sunGlow;
+    c += sunColor * (pow(d, 400.0) * 0.5 + pow(d, 24.0) * 0.06) * sunGlow;
     gl_FragColor = vec4(c, 1.0);
   }
 `
@@ -104,10 +104,10 @@ export class Sky {
     this.dome.layers.set(SKY_LAYER)
     scene.add(this.dome)
 
-    this.sunMesh = new THREE.Mesh(new THREE.PlaneGeometry(26, 26), new THREE.MeshBasicMaterial({ color: 0xfff6c8, fog: false }))
+    this.sunMesh = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshBasicMaterial({ color: 0xfff6c8, fog: false }))
     this.moonMesh = new THREE.Mesh(new THREE.PlaneGeometry(16, 16), new THREE.MeshBasicMaterial({ color: 0xe6ecff, fog: false }))
     this.sunMesh.layers.set(SKY_LAYER)
-    this.sunDisk = new THREE.Mesh(new THREE.CircleGeometry(34, 24), new THREE.MeshBasicMaterial({ color: 0xffffff }))
+    this.sunDisk = new THREE.Mesh(new THREE.PlaneGeometry(22, 22), new THREE.MeshBasicMaterial({ color: 0xffffff }))
     this.sunDisk.layers.set(SUN_DISK_LAYER)
     scene.add(this.sunDisk)
     this.moonMesh.layers.set(SKY_LAYER)
