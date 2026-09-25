@@ -209,18 +209,22 @@ class GeometryBuilder {
     this.idx = ni
   }
 
-  quad(x: number, y: number, z: number, def: FaceDef, r: UVRect, ao: number[], light: number, heightScale = 1) {
+  quad(x: number, y: number, z: number, def: FaceDef, r: UVRect, ao: number[], light: number, heightScale = 1, yBase = 0, topHeights?: number[]) {
     if ((this.verts + 4) * 3 > this.pos.length) this.grow()
     const start = this.verts
     const [u0, v0, u1, v1] = r
     const us = [u0, u1, u1, u0]
-    const vs = [v0, v0, v1, v1]
+    // la textura se recorta igual que la cara: de yBase a heightScale
+    const vb = v0 + (v1 - v0) * yBase
+    const vt = v0 + (v1 - v0) * heightScale
+    const vs = def.dir[1] === 0 ? [vb, vb, vt, vt] : [v0, v0, v1, v1]
     const lf = lightFactor(light) * def.shade
     for (let i = 0; i < 4; i++) {
       const c = def.corners[i]
       const p = (start + i) * 3
       this.pos[p] = x + c[0]
-      this.pos[p + 1] = y + c[1] * heightScale
+      const top = topHeights ? topHeights[i] : heightScale
+      this.pos[p + 1] = c[1] === 1 ? y + top : y + yBase
       this.pos[p + 2] = z + c[2]
       this.norm[p] = def.dir[0]
       this.norm[p + 1] = def.dir[1]
@@ -307,19 +311,38 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
             return l >= 8 ? 1 : l === 0 ? 0.875 : Math.max(0.12, 0.875 - l * 0.105)
           }
           const height = liquidHeight(x, y, z, block)
+          // la superficie va inclinada como en Minecraft: cada esquina promedia
+          // las celdas de agua que la rodean, y así la corriente baja sin escalones
+          const cornerH = (cx: number, cz: number) => {
+            let sum = 0
+            let n = 0
+            let full = false
+            for (let ox = -1; ox <= 0; ox++) {
+              for (let oz = -1; oz <= 0; oz++) {
+                const bx = x + cx + ox
+                const bz = z + cz + oz
+                const bb = field.block(bx, y, bz)
+                if (bb === UNKNOWN || !blockDef(bb).liquid) continue
+                const h = liquidHeight(bx, y, bz, bb)
+                if (h >= 1) full = true
+                sum += h
+                n++
+              }
+            }
+            if (full) return 1
+            return n ? sum / n : height
+          }
+          const corners = [cornerH(0, 0), cornerH(1, 0), cornerH(0, 1), cornerH(1, 1)]
+          const topFor = (f: FaceDef) => f.corners.map((c) => corners[c[0] + c[2] * 2])
           for (const f of FACES) {
             const n = field.block(x + f.dir[0], y + f.dir[1], z + f.dir[2])
             if (n === UNKNOWN || isOpaque(n)) continue
             const nLiquid = blockDef(n).liquid
-            if (f.dir[1] === 1 && nLiquid) continue
+            // entre dos aguas no hay caras: la pendiente ya las une
+            if (nLiquid && f.dir[1] !== -1) continue
             if (f.dir[1] === -1 && n !== Block.AIR) continue
-            // entre dos aguas sólo se dibuja el escalón si la vecina es más baja
-            if (f.dir[1] === 0 && nLiquid) {
-              const nh = liquidHeight(x + f.dir[0], y, z + f.dir[2], n)
-              if (nh >= height - 0.01) continue
-            }
             const light = f.dir[1] === 1 ? field.light(x, y + 1, z) : Math.max(field.light(x, y, z), field.light(x + f.dir[0], y + f.dir[1], z + f.dir[2]))
-            water.quad(x, y, z, f, uvFor(block, f.face), NO_AO, light, height)
+            water.quad(x, y, z, f, uvFor(block, f.face), NO_AO, light, height, 0, topFor(f))
           }
           continue
         }
