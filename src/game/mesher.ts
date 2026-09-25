@@ -28,6 +28,8 @@ export interface MeshBuffers {
 export interface ChunkMesh {
   opaque: MeshBuffers
   cutout: MeshBuffers
+  /** hojas y plantas: recorte alfa y además se mecen con el viento */
+  foliage: MeshBuffers
   water: MeshBuffers
 }
 
@@ -270,6 +272,7 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
 
   const opaque = new GeometryBuilder()
   const cutout = new GeometryBuilder()
+  const foliage = new GeometryBuilder()
   const water = new GeometryBuilder()
   const uvFor = (block: number, face: Face): UVRect => uv[blockDef(block).textures[face]] ?? uv['121']
   const occludes = (b: number) => b !== UNKNOWN && isOpaque(b)
@@ -348,10 +351,11 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
         }
 
         if (def.cutout) {
+          const target = def.category === 'plants' ? foliage : cutout
           for (const f of FACES) {
             const n = field.block(x + f.dir[0], y + f.dir[1], z + f.dir[2])
             if (n === UNKNOWN || n === block || isOpaque(n)) continue
-            cutout.quad(x, y, z, f, uvFor(block, f.face), aoFor(x, y, z, f), field.light(x + f.dir[0], y + f.dir[1], z + f.dir[2]))
+            target.quad(x, y, z, f, uvFor(block, f.face), aoFor(x, y, z, f), field.light(x + f.dir[0], y + f.dir[1], z + f.dir[2]))
           }
           continue
         }
@@ -366,7 +370,7 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
     }
   }
 
-  return { opaque: opaque.finish(), cutout: cutout.finish(), water: water.finish() }
+  return { opaque: opaque.finish(), cutout: cutout.finish(), foliage: foliage.finish(), water: water.finish() }
 }
 
 /** un cubo suelto con las mismas UV que el mundo (mano, iconos) */
@@ -378,7 +382,7 @@ export function buildBlockMesh(uv: UVTable, block: number): MeshBuffers {
 
 export function transferables(m: ChunkMesh): ArrayBuffer[] {
   const out: ArrayBuffer[] = []
-  for (const part of [m.opaque, m.cutout, m.water]) {
+  for (const part of [m.opaque, m.cutout, m.foliage, m.water]) {
     out.push(part.pos.buffer as ArrayBuffer, part.norm.buffer as ArrayBuffer, part.uv.buffer as ArrayBuffer, part.col.buffer as ArrayBuffer, part.idx.buffer as ArrayBuffer)
   }
   return out
