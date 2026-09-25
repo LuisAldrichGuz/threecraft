@@ -285,25 +285,28 @@ export class PlayerModel {
       const f = cl(s.vf, 8)
       const r = cl(s.vr, 8)
       const u = cl(s.vy, 6)
-      const bob = Math.sin(this.time * 2) * 0.03
       const upv = Math.max(0, u)
       const down = Math.max(0, -u)
-      // subir: se echa atrás con los brazos arriba, como si lo izaran; bajar: pica de cabeza con los brazos pegados
-      tiltX = -0.95 * f + 0.55 * upv - 0.75 * down
-      tiltZ = -0.55 * r
-      rootY = bob
       const go = Math.min(1, Math.hypot(f, r))
-      head.rot.x = 0.45 * f - 0.4 * upv + 0.35 * down + s.pitch
-      // brazos: hacia delante al avanzar; de lado se abre el del lado al que vas; hacia atrás se pegan al cuerpo
+      const t = this.time
+      // quieto: flota meciéndose; avanzando: ondula como nadando en el aire
+      const bob = Math.sin(t * 2) * 0.03 + Math.sin(t * 5.3) * 0.01 * go
+      // subir: se echa atrás con los brazos arriba, como si lo izaran; bajar: pica de cabeza con los brazos pegados
+      tiltX = -0.95 * f + 0.55 * upv - 0.75 * down + Math.sin(t * 2.6) * 0.06 * go
+      tiltZ = -0.55 * r + Math.sin(t * 1.7) * 0.05
+      rootY = bob
+      head.rot.x = 0.45 * f - 0.4 * upv + 0.35 * down + s.pitch + Math.sin(t * 2.6) * 0.04 * go
+      // brazos: hacia delante al avanzar, con vaivén; de lado se abre el del lado al que vas; hacia atrás se pegan
       const fwd = Math.max(0, f)
       const back = Math.max(0, -f)
-      const armX = 0.35 + 2.4 * fwd - 0.5 * back + 1.3 * upv - 0.6 * down
-      const armZ = 0.55 - 0.45 * go + 0.5 * upv - 0.4 * down
-      rArm.rot.set(armX, 0, armZ + 0.6 * Math.max(0, r))
-      lArm.rot.set(armX, 0, -armZ - 0.6 * Math.max(0, -r))
-      const kick = Math.sin(this.time * 3) * 0.05
-      rLeg.rot.set(kick - 0.15 * back + 0.3 * upv, 0, 0.08 - 0.15 * r + 0.12 * down)
-      lLeg.rot.set(-kick - 0.15 * back + 0.3 * upv, 0, -0.08 - 0.15 * r - 0.12 * down)
+      const sway = Math.sin(t * 2.2) * 0.12
+      const armX = 0.35 + 2.4 * fwd - 0.5 * back + 1.3 * upv - 0.6 * down + sway * (1 - go)
+      const armZ = 0.55 - 0.45 * go + 0.5 * upv - 0.4 * down + Math.cos(t * 1.9) * 0.08
+      rArm.rot.set(armX + Math.sin(t * 3.1) * 0.08 * go, 0, armZ + 0.6 * Math.max(0, r))
+      lArm.rot.set(armX - Math.sin(t * 3.1) * 0.08 * go, 0, -armZ - 0.6 * Math.max(0, -r))
+      const kick = Math.sin(t * 3) * (0.06 + 0.1 * go)
+      rLeg.rot.set(kick - 0.15 * back + 0.3 * upv, 0, 0.08 - 0.15 * r + 0.12 * down + Math.sin(t * 1.5) * 0.03)
+      lLeg.rot.set(-kick - 0.15 * back + 0.3 * upv, 0, -0.08 - 0.15 * r - 0.12 * down - Math.sin(t * 1.5) * 0.03)
     } else if (!s.onGround && s.vy > 0.5) {
       // salto: brazos arriba y piernas recogidas
       rArm.rot.set(2.6, 0, 0.3)
@@ -348,21 +351,15 @@ export class PlayerModel {
       lArm.rot.x += 0.3
     }
 
-    if (s.firstPerson) {
-      // el brazo derecho apunta hacia donde miras, un poco hacia dentro, con el
-      // bloque en la mano; el meneo de andar se le queda en un balanceo pequeño
-      rArm.rot.set(Math.PI / 2 + s.pitch * 0.9 - 0.3 - body.rot.x + swing * 0.08, -0.18, 0.32 + Math.abs(swing) * 0.05)
-    }
-
     if (s.swing > 0) {
       // el golpe de Minecraft: el brazo sube y baja de golpe
       const t = s.swing
       const a = Math.sin(Math.sqrt(t) * Math.PI)
       const b = Math.sin(t * Math.PI)
-      rArm.rot.x += (s.firstPerson ? 0.45 : 1.2) * a + 0.15
+      rArm.rot.x += 1.2 * a + 0.15
       rArm.rot.y -= b * 0.5
       rArm.rot.z += b * 0.2
-      if (!s.firstPerson) body.rot.y = -b * 0.25
+      body.rot.y = -b * 0.25
     }
 
     // amortiguar hacia el objetivo: las poses se funden en vez de saltar
@@ -370,7 +367,7 @@ export class PlayerModel {
     const kSwing = 1 - Math.exp(-dt * 30)
     for (const [name, group] of this.parts) {
       const t = this.targets.get(name)!
-      const rate = name === 'rightArm' && (s.swing > 0 || s.firstPerson) ? kSwing : k
+      const rate = name === 'rightArm' && s.swing > 0 ? kSwing : k
       group.rotation.x += (t.rot.x - group.rotation.x) * rate
       group.rotation.y += (t.rot.y - group.rotation.y) * rate
       group.rotation.z += (t.rot.z - group.rotation.z) * rate
@@ -381,15 +378,13 @@ export class PlayerModel {
     this.tilt.rotation.z += (tiltZ - this.tilt.rotation.z) * kTilt
     this.tilt.position.y += ((12 * PX + rootY) - this.tilt.position.y) * kTilt
 
-    // en primera persona la cabeza no se pinta (la cámara está dentro) pero sí
-    // proyecta sombra: se deja visible y sólo se apaga la escritura de color
-    for (const child of this.parts.get('head')!.children) {
-      if (child instanceof THREE.Mesh) {
-        const m = child.material as THREE.MeshLambertMaterial
-        m.colorWrite = !s.firstPerson
-        m.depthWrite = !s.firstPerson && m.alphaTest === 0
-      }
+    // en primera persona el muñeco no se pinta (la mano va aparte, como en
+    // Minecraft) pero sí proyecta sombra: sólo se apaga la escritura de color
+    for (const m of this.materials) {
+      m.colorWrite = !s.firstPerson
+      m.depthWrite = !s.firstPerson && m.alphaTest === 0
     }
+    if (this.held) this.held.visible = !s.firstPerson
 
     // el bloque va derecho: deshace el giro acumulado del brazo, el torso y la cadera
     if (this.held) {
