@@ -13,7 +13,13 @@ import { loadSkin, makeBox } from './playerModel'
  * al romper o poner.
  */
 const BLOCK_POS = new THREE.Vector3(0.56, -0.52, -0.72)
-const ARM_POS = new THREE.Vector3(0.74, -0.74, -0.92)
+const ARM_POS = new THREE.Vector3(0.8, -0.89, -0.78)
+// hacia dónde apunta la mano desde el hombro (arriba-izquierda y un poco hacia la cámara),
+// y un giro sobre ese eje para que se vea el dorso de la mano, no el codo
+const ARM_DIR = new THREE.Vector3(-0.5, 0.85, 0.1).normalize()
+const ARM_QUAT = new THREE.Quaternion()
+  .setFromUnitVectors(new THREE.Vector3(0, -1, 0), ARM_DIR)
+  .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, -1, 0), -0.6))
 
 export class Viewmodel {
   group = new THREE.Group()
@@ -34,13 +40,13 @@ export class Viewmodel {
     this.armMaterials.push(base, overlay)
     const inner = new THREE.Mesh(makeBox(40, 16, 4, 12, 4), base)
     const outer = new THREE.Mesh(makeBox(40, 32, 4, 12, 4, 0.25), overlay)
-    // el brazo cuelga del hombro (arriba); se pone boca abajo para que la mano quede arriba, hacia el centro
-    inner.rotation.z = Math.PI
-    outer.rotation.z = Math.PI
-    inner.position.y = 0.375
-    outer.position.y = 0.375
+    // el brazo cuelga del hombro (el origen del grupo) hacia -Y, como en el muñeco;
+    // el grupo se orienta para que la mano apunte arriba y hacia el centro
+    inner.position.y = -0.375
+    outer.position.y = -0.375
     this.arm.add(inner, outer)
-    this.arm.scale.setScalar(0.95)
+    this.arm.scale.setScalar(1.0)
+    this.arm.quaternion.copy(ARM_QUAT)
     this.group.add(this.arm)
 
     this.blockMesh = new THREE.Mesh(buffersToGeometry(buildBlockMesh(atlas.uvTable, Block.STONE)), new THREE.MeshBasicMaterial({ map: atlas.texture, vertexColors: true }))
@@ -94,6 +100,8 @@ export class Viewmodel {
     this.blockMesh.rotation.set(-sw * 0.9, Math.PI / 4 - sw * 0.5, 0)
 
     this.arm.position.set(ARM_POS.x + bobX - sw * 0.25, ARM_POS.y + bobY + this.crouchY + equip - sw * 0.18, ARM_POS.z - sw * 0.1)
-    this.arm.rotation.set(0.38 - sw * 1.0, 0.55 - sw * 0.5, 0.3 + sw * 0.3)
+    // el golpe: gira el brazo hacia el centro y abajo desde el hombro
+    this.arm.quaternion.copy(ARM_QUAT)
+    if (sw > 0) this.arm.quaternion.premultiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-sw * 0.9, -sw * 0.5, sw * 0.3)))
   }
 }
