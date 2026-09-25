@@ -13,6 +13,7 @@ import { GodRays, SKY_LAYER } from './godrays'
 import { WaterMaterial } from './waterMaterial'
 import { Splash } from './splash'
 import { GameAudio } from './audio'
+import { FallingBlocks } from './fallingBlocks'
 import { raycastVoxel } from './raycast'
 import { renderBlockIcons } from './icons'
 import { loadPlayer, loadSettings, savePlayer, saveSettings, type Settings } from './storage'
@@ -121,6 +122,7 @@ export class Game {
   private clock = 0
   private splash = new Splash()
   private audio!: GameAudio
+  private falling!: FallingBlocks
   private stepDistance = 0
   private hitTimer = 0
   private lastPos = new THREE.Vector3()
@@ -237,6 +239,15 @@ export class Game {
 
     this.sky = new Sky(this.scene, this.settings.shadows, this.settings.seed)
     this.audio = new GameAudio(this.camera)
+    this.falling = new FallingBlocks(this.scene, this.world, this.atlas, this.heldMaterial)
+    this.falling.onLand = (x, y, z, block) => {
+      this.markDirtyAround(x, z)
+      if (block !== Block.AIR) {
+        this.audio.place(block)
+        // lo que aterriza puede destapar o apoyar a otros
+        this.afterBlockChange(x, y, z)
+      }
+    }
     this.heldMaterial = new THREE.MeshLambertMaterial({ map: this.atlas.texture, vertexColors: true })
     this.model = new PlayerModel()
     this.model.root.traverse((o) => {
@@ -347,6 +358,12 @@ export class Game {
         s.group = group
       })
     }
+  }
+
+  /** algo cambió en (x, y, z): los vecinos reaccionan (arena que cae, y más adelante el agua) */
+  private afterBlockChange(x: number, y: number, z: number) {
+    this.falling.check(x, y + 1, z)
+    this.falling.check(x, y, z)
   }
 
   private markDirtyAround(x: number, z: number) {
@@ -576,6 +593,7 @@ export class Game {
           this.audio.break(b)
           this.world.setBlock(hit.block.x, hit.block.y, hit.block.z, Block.AIR)
           this.markDirtyAround(hit.block.x, hit.block.z)
+          this.afterBlockChange(hit.block.x, hit.block.y, hit.block.z)
           this.breaking = null
         }
       }
@@ -601,6 +619,7 @@ export class Game {
         this.world.setBlock(p.x, p.y, p.z, block)
         this.audio.place(block)
         this.markDirtyAround(p.x, p.z)
+        this.afterBlockChange(p.x, p.y, p.z)
         this.swingT = 0
       }
       this.placeCooldown = 0.22
@@ -745,6 +764,7 @@ export class Game {
       }
     }
     this.splash.update(dt)
+    this.falling.update(dt)
 
     this.renderer.render(this.scene, this.camera)
     if (!this.player.headInWater) {
