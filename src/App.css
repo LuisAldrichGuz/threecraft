@@ -1,0 +1,144 @@
+/*
+ * La interfaz al estilo de Minecraft, hecha a mano con CSS: botones de piedra
+ * con bisel (claro arriba-izquierda, oscuro abajo-derecha), fondo de tierra
+ * oscurecida (la textura es la del propio pack), casillas oscuras con marco
+ * blanco al elegir, y una fuente de píxeles. Nada de bordes redondeados ni
+ * sombras difusas: todo es duro, como en el juego.
+ */
+:root {
+  --font: 'Pixelify Sans', 'Press Start 2P', monospace;
+  --shadow: #3f3f3f;
+  --btn: #6f6f6f;
+  --btn-hover: #7f95c8;
+  --btn-light: #a0a0a0;
+  --btn-dark: #2b2b2b;
+  --panel: #c6c6c6;
+  --panel-light: #ffffff;
+  --panel-dark: #555555;
+  --slot: #8b8b8b;
+  --slot-light: #ffffff;
+  --slot-dark: #373737;
+  --text: #ffffff;
+  --text-dark: #404040;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; overflow: hidden; background: #000; }
+body { font-family: var(--font); color: var(--text); user-select: none; -webkit-user-select: none; }
+
+.game-root { position: relative; width: 100vw; height: 100vh; }
+canvas { display: block; width: 100%; height: 100%; }
+img { image-rendering: pixelated; }
+button { font-family: var(--font); }
+
+.mc-text { font-size: 18px; line-height: 1.2; text-shadow: 2px 2px 0 var(--shadow); }
+.mc-text.small { font-size: 14px; color: #a0a0a0; }
+.mc-title { font-size: clamp(28px, 5vw, 46px); font-weight: 700; text-align: center; text-shadow: 3px 3px 0 var(--shadow); margin-bottom: 14px; }
+.mc-heading { font-size: 18px; color: var(--text-dark); text-shadow: none; margin: 2px 0 6px; }
+
+/* ---------------------------------------------------------------- HUD */
+.crosshair {
+  position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px;
+  pointer-events: none; mix-blend-mode: difference;
+}
+.crosshair::before, .crosshair::after { content: ''; position: absolute; background: #fff; }
+.crosshair::before { left: 8px; top: 0; width: 2px; height: 18px; }
+.crosshair::after { top: 8px; left: 0; height: 2px; width: 18px; }
+
+.underwater { position: absolute; inset: 0; pointer-events: none; background: rgba(20, 70, 120, 0.35); box-shadow: inset 0 0 120px rgba(0, 20, 60, 0.6); }
+
+.debug { position: absolute; top: 8px; left: 8px; pointer-events: none; }
+.debug div { background: rgba(80, 80, 80, 0.5); padding: 1px 4px; margin-bottom: 1px; width: max-content; }
+
+.hotbar-wrap { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; transition: opacity 0.2s; }
+.hotbar-wrap.dim { opacity: 0.35; }
+.held-name { font-size: 18px; }
+.hotbar { display: flex; padding: 3px; background: rgba(0, 0, 0, 0.45); border: 3px solid #000; box-shadow: inset 0 0 0 2px #5f5f5f; }
+.slot {
+  width: 52px; height: 52px; padding: 6px; border: 0; background: transparent; cursor: pointer; position: relative;
+}
+.slot img { width: 100%; height: 100%; object-fit: contain; }
+.slot.active::after { content: ''; position: absolute; inset: -5px; border: 3px solid #fff; box-shadow: inset 0 0 0 2px #7d7d7d, 0 0 0 2px #000; pointer-events: none; }
+
+/* ------------------------------------------------------------ overlays */
+.overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.overlay.tint { background: rgba(0, 0, 0, 0.55); }
+.overlay.dirt {
+  flex-direction: column; gap: 8px;
+  background-color: #2f2f2f; background-image: url('/textures/551.png'); background-size: 64px 64px; image-rendering: pixelated;
+  box-shadow: inset 0 0 0 100vmax rgba(0, 0, 0, 0.6);
+}
+
+.pause { width: min(420px, 100%); display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.mc-row { display: flex; gap: 8px; width: 100%; }
+.mc-row .mc-btn { flex: 1; }
+
+.mc-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 44px; padding: 0 16px; font-size: 18px; color: var(--text); text-shadow: 2px 2px 0 var(--shadow);
+  background: var(--btn); border: 2px solid #000; cursor: pointer;
+  box-shadow: inset 2px 2px 0 var(--btn-light), inset -2px -2px 0 var(--btn-dark);
+  image-rendering: pixelated;
+}
+.mc-btn:hover { background: var(--btn-hover); color: #ffffa0; box-shadow: inset 2px 2px 0 #aab9e6, inset -2px -2px 0 #3b4a75; }
+.mc-btn:active { box-shadow: inset -2px -2px 0 var(--btn-light), inset 2px 2px 0 var(--btn-dark); }
+.mc-btn.wide { width: 100%; }
+
+.mc-panel {
+  width: 100%; background: var(--panel); color: var(--text-dark); padding: 12px;
+  border: 2px solid #000; box-shadow: inset 4px 4px 0 var(--panel-light), inset -4px -4px 0 var(--panel-dark);
+  display: flex; flex-direction: column; gap: 8px; max-height: calc(100vh - 32px); overflow: auto;
+}
+.mc-panel .mc-text { color: var(--text-dark); text-shadow: none; }
+.mc-panel .mc-text.small { color: #6a6a6a; }
+.mc-panel .mc-btn { text-shadow: 2px 2px 0 var(--shadow); }
+
+.mc-input {
+  width: 100%; height: 40px; padding: 0 10px; font: inherit; font-size: 16px; color: #e0e0e0;
+  background: #000; border: 2px solid #a0a0a0; outline: none;
+}
+.mc-input:focus { border-color: #fff; }
+
+/* inventario */
+.inventory { width: min(720px, 100%); }
+.tabs { display: flex; flex-wrap: wrap; gap: 2px; margin: -12px -12px 4px; padding: 6px 6px 0; background: var(--panel-dark); }
+.tab {
+  padding: 8px 10px; font-size: 14px; color: #e0e0e0; background: #8b8b8b; border: 2px solid #000; border-bottom: 0; cursor: pointer;
+  box-shadow: inset 2px 2px 0 #b0b0b0;
+}
+.tab.active { background: var(--panel); color: var(--text-dark); box-shadow: inset 2px 2px 0 var(--panel-light); }
+.inv-grid { display: grid; grid-template-columns: repeat(auto-fill, 52px); gap: 2px; justify-content: center; max-height: 46vh; overflow: auto; padding: 2px; }
+.inv-slot {
+  width: 52px; height: 52px; padding: 5px; background: var(--slot); border: 0; cursor: pointer; position: relative;
+  box-shadow: inset 2px 2px 0 var(--slot-dark), inset -2px -2px 0 var(--slot-light);
+}
+.inv-slot:hover { background: #a3a3a3; }
+.inv-slot:hover::after { content: ''; position: absolute; inset: 2px; background: rgba(255, 255, 255, 0.4); pointer-events: none; }
+.inv-slot.active { box-shadow: inset 2px 2px 0 var(--slot-dark), inset -2px -2px 0 var(--slot-light), 0 0 0 3px #fff; }
+.inv-slot img { width: 100%; height: 100%; object-fit: contain; }
+.inv-hotbar { display: flex; gap: 2px; justify-content: center; padding-top: 8px; border-top: 2px solid var(--panel-dark); }
+
+/* skins */
+.skins { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 4px; max-height: 50vh; overflow: auto; }
+.skin {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 2px; font-size: 12px; text-transform: capitalize;
+  color: var(--text-dark); background: var(--slot); border: 0; cursor: pointer;
+  box-shadow: inset 2px 2px 0 var(--slot-dark), inset -2px -2px 0 var(--slot-light);
+}
+.skin:hover { background: #a3a3a3; }
+.skin.active { box-shadow: inset 2px 2px 0 var(--slot-dark), inset -2px -2px 0 var(--slot-light), 0 0 0 3px #fff; }
+.face { position: relative; display: inline-block; image-rendering: pixelated; flex: none; }
+.face-layer { position: absolute; inset: 0; image-rendering: pixelated; background-repeat: no-repeat; }
+
+/* controles */
+.controls { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+.control { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-dark); }
+.key {
+  min-width: 78px; padding: 4px 6px; text-align: center; font-size: 13px; color: #fff; text-shadow: 1px 1px 0 #3f3f3f;
+  background: var(--btn); border: 2px solid #000; box-shadow: inset 2px 2px 0 var(--btn-light), inset -2px -2px 0 var(--btn-dark);
+}
+
+@media (max-width: 600px) {
+  .slot { width: 38px; height: 38px; padding: 4px; }
+  .controls { grid-template-columns: 1fr; }
+}
