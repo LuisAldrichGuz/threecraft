@@ -78,7 +78,6 @@ export interface Settings {
   quality: Quality
   ssao: boolean
   bloom: boolean
-  motionBlur: boolean
   vignette: boolean
   godRays: boolean
   /** resolución de render (1 = nativa) */
@@ -89,15 +88,15 @@ export type Quality = 'auto' | 'baja' | 'media' | 'alta' | 'ultra'
 
 export const DEFAULT_SETTINGS: Settings = {
   seed: 1337, skin: 'aldrich', thirdPerson: false, renderRadius: 6, shadows: true, timeFlowing: true,
-  quality: 'auto', ssao: false, bloom: false, motionBlur: false, vignette: false, godRays: true, resolution: 1,
+  quality: 'auto', ssao: false, bloom: false, vignette: false, godRays: true, resolution: 1,
 }
 
 /** lo que enciende cada preset */
 export const QUALITY_PRESETS: Record<Exclude<Quality, 'auto'>, Partial<Settings>> = {
-  baja: { renderRadius: 4, shadows: false, ssao: false, bloom: false, motionBlur: false, vignette: false, godRays: false, resolution: 0.75 },
-  media: { renderRadius: 6, shadows: true, ssao: false, bloom: false, motionBlur: false, vignette: true, godRays: true, resolution: 1 },
-  alta: { renderRadius: 8, shadows: true, ssao: true, bloom: true, motionBlur: true, vignette: true, godRays: true, resolution: 1 },
-  ultra: { renderRadius: 10, shadows: true, ssao: true, bloom: true, motionBlur: true, vignette: true, godRays: true, resolution: 1.5 },
+  baja: { renderRadius: 4, shadows: false, ssao: false, bloom: false, vignette: false, godRays: false, resolution: 0.75 },
+  media: { renderRadius: 6, shadows: true, ssao: false, bloom: false, vignette: true, godRays: true, resolution: 1 },
+  alta: { renderRadius: 8, shadows: true, ssao: true, bloom: true, vignette: true, godRays: true, resolution: 1 },
+  ultra: { renderRadius: 10, shadows: true, ssao: true, bloom: true, vignette: true, godRays: true, resolution: 1.5 },
 }
 
 /**
