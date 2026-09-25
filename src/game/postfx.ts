@@ -18,7 +18,7 @@ export interface FxFlags {
 }
 
 const VIGNETTE = {
-  uniforms: { tDiffuse: { value: null as THREE.Texture | null }, strength: { value: 0.35 } },
+  uniforms: { tDiffuse: { value: null as THREE.Texture | null }, strength: { value: 0.45 } },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
     void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
@@ -53,7 +53,7 @@ export class PostFX {
     this.ssao.updateGtaoMaterial({ radius: 0.6, distanceExponent: 1.5, thickness: 1, scale: 1.2, samples: 12, distanceFallOff: 1, screenSpaceRadius: false })
     this.composer.addPass(this.ssao)
 
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(width, height), 0.25, 0.6, 0.92)
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(width, height), 0.35, 0.7, 0.88)
     this.composer.addPass(this.bloom)
 
     this.vignette = new ShaderPass(VIGNETTE)

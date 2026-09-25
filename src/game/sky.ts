@@ -5,8 +5,8 @@ import { SKY_LAYER, SUN_DISK_LAYER } from './godrays'
 /** un día entero, en segundos reales */
 const DAY_LENGTH = 20 * 60
 
-const DAY_ZENITH = new THREE.Color(0x4f9be8)
-const DAY_HORIZON = new THREE.Color(0xbfe3ff)
+const DAY_ZENITH = new THREE.Color(0x5aa0e6)
+const DAY_HORIZON = new THREE.Color(0xd9e6f2)
 const DUSK_HORIZON = new THREE.Color(0xff9a5c)
 const NIGHT_ZENITH = new THREE.Color(0x0b1226)
 const NIGHT_HORIZON = new THREE.Color(0x1b2a4a)
@@ -44,6 +44,8 @@ const SKY_FRAG = /* glsl */ `
  */
 export class Sky {
   time = 0.3
+  /** con el ciclo apagado, el reloj se queda fijo donde lo dejó el slider */
+  frozen = false
   sun: THREE.DirectionalLight
   ambient: THREE.HemisphereLight
   /** 0 de noche cerrada, 1 a pleno día */
@@ -68,19 +70,20 @@ export class Sky {
     scene.add(this.sun, this.sun.target, this.ambient)
 
     if (shadows) {
+      // sombras pixeladas a propósito, como los shaders de Minecraft: mapa
+      // pequeño (cada texel cubre ~0.1 bloque) y sin suavizado (BasicShadowMap)
       this.sun.castShadow = true
-      this.sun.shadow.mapSize.set(2048, 2048)
+      this.sun.shadow.mapSize.set(1024, 1024)
       const cam = this.sun.shadow.camera
-      cam.left = -56
-      cam.right = 56
-      cam.top = 56
-      cam.bottom = -56
+      cam.left = -48
+      cam.right = 48
+      cam.top = 48
+      cam.bottom = -48
       cam.near = 1
       cam.far = 260
-      this.sun.shadow.bias = -0.0006
-      this.sun.shadow.normalBias = 0.03
-      this.sun.shadow.radius = 3
-      this.sun.shadow.intensity = 0.85
+      this.sun.shadow.bias = -0.0015
+      this.sun.shadow.normalBias = 0.04
+      this.sun.shadow.intensity = 1
     }
 
     this.uniforms = {
@@ -126,7 +129,7 @@ export class Sky {
   }
 
   update(dt: number, scene: THREE.Scene, eye: THREE.Vector3, underwater: boolean, fogFar: number) {
-    this.time = (this.time + dt / DAY_LENGTH) % 1
+    if (!this.frozen) this.time = (this.time + dt / DAY_LENGTH) % 1
     const angle = this.time * Math.PI * 2 - Math.PI / 2
     const sunDir = new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0.3).normalize()
     const elevation = sunDir.y
@@ -162,11 +165,12 @@ export class Sky {
     const lightDir = moonUp ? sunDir.clone().negate() : sunDir
     this.sun.position.copy(eye).addScaledVector(lightDir, 120)
     this.sun.target.position.copy(eye)
-    this.sun.intensity = moonUp ? 0.5 : 0.6 + 1.9 * daylight
-    this.sun.color.set(moonUp ? 0x9fb4e6 : 0xffffff).lerp(DUSK_HORIZON, moonUp ? 0 : dusk * 0.6)
-    this.ambient.intensity = 0.55 + 0.55 * daylight
-    this.ambient.color.copy(horizon).lerp(new THREE.Color(0xffffff), 0.6)
-    this.ambient.groundColor.set(0x6b7a5a).lerp(new THREE.Color(0x202838), 1 - daylight)
+    this.sun.intensity = moonUp ? 0.5 : 0.7 + 2.2 * daylight
+    this.sun.color.set(moonUp ? 0x9fb4e6 : 0xfff0d2).lerp(DUSK_HORIZON, moonUp ? 0 : dusk * 0.6)
+    this.ambient.intensity = 0.5 + 0.5 * daylight
+    // luz de relleno cálida (lo que no toca el sol queda en penumbra dorada, no azul)
+    this.ambient.color.copy(horizon).lerp(new THREE.Color(0xffe9c8), 0.7)
+    this.ambient.groundColor.set(0x7a6a4a).lerp(new THREE.Color(0x202838), 1 - daylight)
 
     this.sunMesh.position.copy(eye).addScaledVector(sunDir, 380)
     this.sunMesh.lookAt(eye)
