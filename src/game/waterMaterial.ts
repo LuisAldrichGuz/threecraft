@@ -67,14 +67,17 @@ const FRAG = /* glsl */ `
       float dz = -sin(vWorld.z * 1.1 + time * 1.3) * 0.05 + cos(vWorld.x * 2.7 + time * 1.9) * 0.03;
       n = normalize(vec3(-dx, 1.0, -dz));
     }
-    float fresnel = pow(1.0 - max(dot(viewDir, n), 0.0), 3.0);
+    // el Fresnel (reflejo del cielo, más opaco de lejos) es cosa de la superficie;
+    // los lados de una corriente se ven siempre como agua, ni espejo ni cristal
+    float isTop = step(0.5, vNormal.y);
+    float fresnel = pow(1.0 - max(dot(viewDir, n), 0.0), 3.0) * isTop;
     vec3 col = mix(base, skyColor * (0.6 + 0.4 * daylight), fresnel * 0.75);
 
     vec3 h = normalize(sunDir + viewDir);
-    float spec = pow(max(dot(n, h), 0.0), 90.0) * daylight;
+    float spec = pow(max(dot(n, h), 0.0), 90.0) * daylight * isTop;
     col += sunColor * spec * 1.2;
 
-    float alpha = 0.62 + fresnel * 0.33;
+    float alpha = mix(0.72, 0.62 + fresnel * 0.33, isTop);
     gl_FragColor = vec4(col, alpha);
     #include <fog_fragment>
   }
