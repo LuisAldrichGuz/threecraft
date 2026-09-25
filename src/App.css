@@ -43,9 +43,9 @@ button { font-family: var(--font); }
 .mc-text.small { font-size: 14px; color: #a0a0a0; }
 /* el mismo efecto 3D del título del portafolio (Symtext + pila de sombras), a escala de un menú */
 .mc-title {
-  font-family: var(--font-title); font-size: clamp(34px, 7vw, 58px); text-transform: uppercase; letter-spacing: 0.02em;
-  text-align: center; margin-bottom: 6px; color: #fff;
-  transform: perspective(280px) rotateX(20deg);
+  width: 100%; font-family: var(--font-title); font-size: clamp(34px, 7vw, 58px); text-transform: uppercase; letter-spacing: 0.02em;
+  text-align: center; margin: 0; color: #fff;
+  transform: perspective(700px) rotateX(12deg); transform-origin: center top;
   text-shadow:
     0 2px 0 #d8d8d8,
     0 4px 0 #b5b5b5,
@@ -54,9 +54,9 @@ button { font-family: var(--font); }
     0 11px 12px rgba(0, 0, 0, 0.4);
 }
 .mc-subtitle {
-  font-family: var(--font-title); font-size: clamp(13px, 2.2vw, 18px); text-transform: uppercase; letter-spacing: 0.05em;
-  text-align: center; margin-top: 0; margin-bottom: 10px; color: #fff;
-  transform: perspective(200px) rotateX(20deg);
+  width: 100%; font-family: var(--font-title); font-size: clamp(13px, 2.2vw, 18px); text-transform: uppercase; letter-spacing: 0.05em;
+  text-align: center; margin: 0 0 10px; color: #fff;
+  transform: perspective(500px) rotateX(12deg); transform-origin: center top;
   text-shadow: 0 1px 0 #d8d8d8, 0 2px 0 #a0a0a0, 0 4px 5px rgba(0, 0, 0, 0.4);
 }
 .mc-heading { font-size: 18px; color: var(--text-dark); text-shadow: none; margin: 2px 0 6px; }
@@ -263,3 +263,7 @@ button { font-family: var(--font); }
 .mc-panel .credit-row a { color: #2f4d8a; text-decoration: underline; }
 
 .mc-btn.on { background: #4f7a3a; box-shadow: inset 2px 2px 0 #7fb35f, inset -2px -2px 0 #2b4520; }
+
+.drag-ghost { position: fixed; width: 44px; height: 44px; pointer-events: none; transform: translate(-50%, -50%); z-index: 10; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.6)); }
+.inv-slot.target { box-shadow: inset 2px 2px 0 var(--slot-dark), inset -2px -2px 0 var(--slot-light), 0 0 0 2px #ffffa0; }
+.inv-slot { touch-action: none; }
