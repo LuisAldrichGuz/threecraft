@@ -95,8 +95,9 @@ export const DEFAULT_SETTINGS: Settings = {
 export const QUALITY_PRESETS: Record<Exclude<Quality, 'auto'>, Partial<Settings>> = {
   baja: { renderRadius: 4, shadows: false, ssao: false, bloom: false, vignette: false, godRays: false, resolution: 0.75 },
   media: { renderRadius: 6, shadows: true, ssao: false, bloom: false, vignette: true, godRays: true, resolution: 1 },
-  alta: { renderRadius: 8, shadows: true, ssao: true, bloom: true, vignette: true, godRays: true, resolution: 1 },
-  ultra: { renderRadius: 10, shadows: true, ssao: true, bloom: true, vignette: true, godRays: true, resolution: 1.5 },
+  // la oclusión de pantalla (GTAO) no la enciende ningún preset: cuesta mucho; sólo a mano, en Gráficos
+  alta: { renderRadius: 8, shadows: true, ssao: false, bloom: true, vignette: true, godRays: true, resolution: 1 },
+  ultra: { renderRadius: 10, shadows: true, ssao: false, bloom: true, vignette: true, godRays: true, resolution: 1.5 },
 }
 
 /**
