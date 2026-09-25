@@ -65,7 +65,7 @@ export class GodRays {
     this.occlusion = new THREE.WebGLRenderTarget(w, h, { depthBuffer: true })
     this.blurred = new THREE.WebGLRenderTarget(w, h, { depthBuffer: false })
     this.blur = new THREE.ShaderMaterial({
-      uniforms: { tex: { value: null }, sun: { value: new THREE.Vector2(0.5, 0.5) }, density: { value: 0.95 }, decay: { value: 0.965 }, weight: { value: 0.11 } },
+      uniforms: { tex: { value: null }, sun: { value: new THREE.Vector2(0.5, 0.5) }, density: { value: 0.95 }, decay: { value: 0.965 }, weight: { value: 0.2 } },
       vertexShader: QUAD_VERT,
       fragmentShader: BLUR_FRAG,
       depthTest: false,

@@ -107,7 +107,7 @@ export class Sky {
     this.sunMesh = new THREE.Mesh(new THREE.PlaneGeometry(26, 26), new THREE.MeshBasicMaterial({ color: 0xfff6c8, fog: false }))
     this.moonMesh = new THREE.Mesh(new THREE.PlaneGeometry(16, 16), new THREE.MeshBasicMaterial({ color: 0xe6ecff, fog: false }))
     this.sunMesh.layers.set(SKY_LAYER)
-    this.sunDisk = new THREE.Mesh(new THREE.CircleGeometry(75, 24), new THREE.MeshBasicMaterial({ color: 0xffffff }))
+    this.sunDisk = new THREE.Mesh(new THREE.CircleGeometry(34, 24), new THREE.MeshBasicMaterial({ color: 0xffffff }))
     this.sunDisk.layers.set(SUN_DISK_LAYER)
     scene.add(this.sunDisk)
     this.moonMesh.layers.set(SKY_LAYER)
