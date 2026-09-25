@@ -12,6 +12,7 @@ import { Sky } from './sky'
 import { GodRays, SKY_LAYER } from './godrays'
 import { WaterMaterial } from './waterMaterial'
 import { Splash } from './splash'
+import { GameAudio } from './audio'
 import { raycastVoxel } from './raycast'
 import { renderBlockIcons } from './icons'
 import { loadPlayer, loadSettings, savePlayer, saveSettings, type Settings } from './storage'
@@ -119,6 +120,10 @@ export class Game {
   private materials!: { opaque: THREE.Material; cutout: THREE.Material; water: WaterMaterial }
   private clock = 0
   private splash = new Splash()
+  private audio!: GameAudio
+  private stepDistance = 0
+  private hitTimer = 0
+  private lastPos = new THREE.Vector3()
   private wakeTimer = 0
 
   private hotbar: number[] = [...DEFAULT_HOTBAR]
@@ -231,6 +236,7 @@ export class Game {
     }
 
     this.sky = new Sky(this.scene, this.settings.shadows, this.settings.seed)
+    this.audio = new GameAudio(this.camera)
     this.heldMaterial = new THREE.MeshLambertMaterial({ map: this.atlas.texture, vertexColors: true })
     this.model = new PlayerModel()
     this.model.root.traverse((o) => {
@@ -455,6 +461,8 @@ export class Game {
   lock() {
     this.inventoryOpen = false
     this.callbacks.onInventory(false)
+    this.audio?.resume()
+    this.audio?.ui('click')
     this.canvas.requestPointerLock()
   }
 
@@ -464,6 +472,7 @@ export class Game {
 
   toggleInventory() {
     this.inventoryOpen = !this.inventoryOpen
+    this.audio?.ui(this.inventoryOpen ? 'open' : 'close')
     this.callbacks.onInventory(this.inventoryOpen)
     if (this.inventoryOpen) document.exitPointerLock()
     else this.canvas.requestPointerLock()
@@ -480,12 +489,14 @@ export class Game {
   }
 
   selectSlot(i: number) {
+    if (i !== this.slot) this.audio?.ui('slot')
     this.slot = i
     this.updateHeld()
     this.pushHud()
   }
 
   setHotbar(i: number, block: number) {
+    this.audio?.ui('select')
     this.hotbar[i] = block
     if (i === this.slot) this.updateHeld()
     this.pushHud()
@@ -556,7 +567,13 @@ export class Game {
       if (def.hardness !== Infinity) {
         const time = Math.max(0.12, Math.min(def.hardness, 4) * 0.28)
         this.breaking.progress += dt / time
+        this.hitTimer -= dt
+        if (this.hitTimer <= 0) {
+          this.hitTimer = 0.25
+          this.audio.hit(b)
+        }
         if (this.breaking.progress >= 1) {
+          this.audio.break(b)
           this.world.setBlock(hit.block.x, hit.block.y, hit.block.z, Block.AIR)
           this.markDirtyAround(hit.block.x, hit.block.z)
           this.breaking = null
@@ -582,6 +599,7 @@ export class Game {
       const there = this.world.getBlock(p.x, p.y, p.z)
       if (block !== Block.AIR && (there === Block.AIR || blockDef(there).liquid) && !this.player.wouldCollideBlock(p.x, p.y, p.z)) {
         this.world.setBlock(p.x, p.y, p.z, block)
+        this.audio.place(block)
         this.markDirtyAround(p.x, p.z)
         this.swingT = 0
       }
@@ -696,9 +714,24 @@ export class Game {
     this.sky.updateShadowCamera(this.player.position)
     this.clock += dt
     this.materials.water.update(this.clock, this.sky.sunDir, this.sky.sunColor, this.sky.horizon, this.sky.daylight)
-    // física del agua, ligera: chapoteo al entrar y estela al nadar por la superficie
+    // pasos: cada 1.7 bloques andados en el suelo suena el bloque que pisas (corriendo, más seguido)
     const p = this.player.position
+    if (this.player.onGround && this.player.speed > 0.5 && !this.player.inWater) {
+      this.stepDistance += p.distanceTo(this.lastPos)
+      if (this.stepDistance >= (this.player.running ? 1.3 : 1.7)) {
+        this.stepDistance = 0
+        this.audio.footstep(this.world.getBlock(Math.floor(p.x), Math.floor(p.y - 0.1), Math.floor(p.z)), this.player.running)
+      }
+    } else {
+      this.stepDistance = 0.9
+    }
+    this.lastPos.copy(p)
+    if (this.player.landed === 0 && this.player.lastFall > 0.4) {
+      this.audio.land(this.world.getBlock(Math.floor(p.x), Math.floor(p.y - 0.1), Math.floor(p.z)), this.player.lastFall)
+    }
+    // física del agua, ligera: chapoteo al entrar y estela al nadar por la superficie
     if (this.player.splashed > 0) {
+      this.audio.splash(this.player.splashed)
       const k = Math.min(1, this.player.splashed / 12)
       this.splash.burst(p.x, Math.floor(p.y + 0.5) + 0.9, p.z, 20 + Math.floor(k * 40), 0.6 + k)
       this.materials.water.ripple(p.x, p.z, 0.6 + k)
