@@ -190,3 +190,99 @@ export function migrateLegacyWorld() {
   }
   if (hasData) upsertWorld({ seed, name: 'Mundo', createdAt: Date.now(), lastPlayed: Date.now() })
 }
+
+/**
+ * Un mundo en un archivo `.threecraft`: la ficha, el jugador y sólo las
+ * ediciones por chunk (el terreno se regenera de la semilla). Sirve para
+ * compartirlo, y para los mundos de serie en `public/worlds/`.
+ */
+export interface WorldFile {
+  format: 'threecraft-world'
+  version: 1
+  meta: { seed: number; name: string; createdAt: number }
+  player: PlayerSave | null
+  /** "cx,cz" → ediciones del chunk */
+  chunks: Record<string, ChunkEdits>
+  thumbnail?: string
+}
+
+export function exportWorld(seed: number): WorldFile {
+  const meta = listWorlds().find((w) => w.seed === seed)
+  const chunks: Record<string, ChunkEdits> = {}
+  const prefix = `${CHUNK_PREFIX}${seed}:`
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i)!
+    if (!k.startsWith(prefix)) continue
+    try {
+      chunks[k.slice(prefix.length)] = JSON.parse(localStorage.getItem(k) || '{}')
+    } catch {
+      /* chunk corrupto: se salta */
+    }
+  }
+  return {
+    format: 'threecraft-world',
+    version: 1,
+    meta: { seed, name: meta?.name ?? 'Mundo', createdAt: meta?.createdAt ?? Date.now() },
+    player: loadPlayer(seed),
+    chunks,
+    thumbnail: meta?.thumbnail,
+  }
+}
+
+/** mete un archivo de mundo en el navegador; si ya hay uno con esa semilla, lo pisa */
+export function importWorld(file: WorldFile): number {
+  if (file.format !== 'threecraft-world') throw new Error('No es un archivo de mundo de ThreeCraft')
+  const seed = file.meta.seed
+  removeWorld(seed)
+  for (const [key, edits] of Object.entries(file.chunks)) {
+    localStorage.setItem(`${CHUNK_PREFIX}${seed}:${key}`, JSON.stringify(edits))
+  }
+  if (file.player) savePlayer(seed, file.player)
+  upsertWorld({ seed, name: file.meta.name, createdAt: file.meta.createdAt, lastPlayed: Date.now(), thumbnail: file.thumbnail })
+  return seed
+}
+
+export function downloadWorld(seed: number) {
+  const file = exportWorld(seed)
+  const blob = new Blob([JSON.stringify(file)], { type: 'application/json' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `${file.meta.name.replace(/[^\w\-]+/g, '_') || 'mundo'}.threecraft`
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+}
+
+export function pickWorldFile(): Promise<WorldFile | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.threecraft,application/json'
+    input.onchange = async () => {
+      const f = input.files?.[0]
+      if (!f) return resolve(null)
+      try {
+        resolve(JSON.parse(await f.text()) as WorldFile)
+      } catch {
+        resolve(null)
+      }
+    }
+    input.click()
+  })
+}
+
+const BUNDLED_FLAG = 'bundledWorldInstalled'
+
+/** la primera vez que alguien abre el juego se le instala el mundo de serie y se abre directo */
+export async function installBundledWorld(): Promise<number | null> {
+  if (read<boolean>(BUNDLED_FLAG, false)) return null
+  try {
+    const res = await fetch('/worlds/aldrich.threecraft')
+    if (!res.ok) return null
+    const file = (await res.json()) as WorldFile
+    const seed = importWorld(file)
+    write(BUNDLED_FLAG, true)
+    return seed
+  } catch {
+    return null
+  }
+}

@@ -21,7 +21,8 @@ sin librerías de motor. Este archivo es el **índice**; el detalle vive en
 | Cámara: primera (fov 100, ojos por postura como el portafolio), tercera atrás y de frente (fov 65), F5 las recorre | ✅ |
 | Físicas: aceleración/coyote/buffer del portafolio a escala de Minecraft, salto fijo de un bloque, nadar, volar (doble espacio), agachado sin caerse | ✅ |
 | UI estilo Minecraft: pausa, inventario por categorías con iconos 3D, hotbar, skins, mundo (semilla, distancia, sombras, día/noche), F3 | ✅ |
-| Guardado en `localStorage` por semilla: ediciones por chunk, jugador, hotbar, ajustes | ✅ |
+| Guardado en `localStorage` por semilla: ediciones por chunk, jugador, hotbar, ajustes · **Exportar / Importar** `.threecraft` desde «Cargar mundos» | ✅ |
+| **Mundo de serie** «Castillo de Aldrich» (`public/worlds/aldrich.threecraft`): se instala y abre solo la primera vez · se genera con `npx tsx scripts/build-castle.ts` | ✅ |
 | Multijugador, mobs, crafteo, redstone | ✗ no hay |
 
 ## Correr
@@ -62,7 +63,8 @@ src/game/
   liquids.ts       el agua por niveles, en pasos de 0.25 s, sólo celdas tocadas
   raycast.ts       DDA por voxels para saber qué bloque miras
   icons.ts         iconos isométricos de cada bloque para la UI
-  storage.ts       localStorage: chunks editados, jugador, ajustes
+  storage.ts       localStorage: chunks editados, jugador, ajustes; export/import .threecraft; mundo de serie
+scripts/build-castle.ts  construye el mundo de serie (castillo + ALDRICH) sobre el terreno de su semilla
 src/App.tsx, App.css   la UI (React), estilo Minecraft con CSS propio
 public/textures/       Faithful 32x por nombre de Minecraft (+ LICENSE-FAITHFUL.txt y CREDITS.md)
 public/sounds/         Kenney CC0 (+ LICENSE.md)
