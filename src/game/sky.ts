@@ -64,7 +64,7 @@ export class Sky {
   clouds: Clouds
   private fogColor = new THREE.Color()
 
-  constructor(scene: THREE.Scene, shadows: boolean, seed: number) {
+  constructor(scene: THREE.Scene, shadows: boolean, seed: number, shadowDistance = 64) {
     this.sun = new THREE.DirectionalLight(0xffffff, 1.2)
     this.ambient = new THREE.HemisphereLight(0xffffff, 0x6b7a5a, 1)
     scene.add(this.sun, this.sun.target, this.ambient)
@@ -74,17 +74,12 @@ export class Sky {
       // suavizado no le gustaron a Luis
       this.sun.castShadow = true
       this.sun.shadow.mapSize.set(2048, 2048)
-      const cam = this.sun.shadow.camera
-      cam.left = -48
-      cam.right = 48
-      cam.top = 48
-      cam.bottom = -48
-      cam.near = 1
-      cam.far = 260
+      this.sun.shadow.camera.near = 1
       // el bias separa la sombra del objeto: lo justo para que no salga acné, y nada más
       this.sun.shadow.bias = -0.0003
       this.sun.shadow.normalBias = 0.01
       this.sun.shadow.intensity = 1
+      this.setShadowDistance(shadowDistance)
     }
 
     this.uniforms = {
@@ -200,5 +195,17 @@ export class Sky {
     this.sun.target.position.set(x, y, z)
     this.sun.position.copy(this.sun.target.position).addScaledVector(dir, 120)
     this.sun.target.updateMatrixWorld()
+  }
+
+  /** qué tan lejos del jugador siguen cayendo sombras: más lejos, el mismo mapa cubre más mundo y se ve más granuloso */
+  setShadowDistance(d: number) {
+    if (!this.sun.castShadow) return
+    const cam = this.sun.shadow.camera as THREE.OrthographicCamera
+    cam.left = -d
+    cam.right = d
+    cam.top = d
+    cam.bottom = -d
+    cam.far = d * 5.4
+    cam.updateProjectionMatrix()
   }
 }

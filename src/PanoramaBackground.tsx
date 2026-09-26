@@ -13,22 +13,23 @@ import { CHUNK_SIZE, WORLD_HEIGHT } from './game/constants'
 
 /**
  * El fondo del menú: una escena 3D de verdad (mundo propio, mallado una vez),
- * con la cámara dando la vuelta alrededor de un punto en las montañas. Nada
- * de fotos pegadas ni del mundo de Luis.
+ * con la cámara parada en la cumbre de una montaña a la altura de los ojos
+ * del jugador, mirando un poco hacia abajo, girando sobre sí misma como si
+ * mirara alrededor. Nada de fotos pegadas ni del mundo de Luis.
  *
  * ⚠️ Genera SÓLO la superficie: nada de cuevas ni menas por debajo, porque
- * desde una cámara que nunca baja de la copa de los árboles ese subsuelo no
- * se ve nunca — mallarlo igual sería tirar la mitad del trabajo (y del
- * tiempo de carga) en triángulos que jamás salen en pantalla.
+ * desde una cámara que nunca baja del suelo ese subsuelo no se ve nunca —
+ * mallarlo igual sería tirar la mitad del trabajo (y del tiempo de carga) en
+ * triángulos que jamás salen en pantalla.
  */
-const SEED = 40028922
+const SEED = 918273645
 const SPIN_SECONDS = 90
 const RADIUS = 9 // (2·9+1)² = 361 chunks alrededor
 const CHUNKS_PER_FRAME = 3
 const SURFACE_MARGIN = 6 // cuánto se deja debajo de la superficie (raíces, orillas de cueva a ras)
-/** la cámara no gira sobre sí misma: da la vuelta en círculo alrededor del centro, mirándolo siempre */
-const ORBIT_RADIUS = 70
-const ORBIT_HEIGHT = 16
+const EYE_HEIGHT = 1.62 // la misma altura de ojos que el jugador (`EYE` en player.ts)
+const PITCH = -0.55 // bien clavada hacia abajo, al paisaje (negativo = abajo, igual que en el juego)
+const FAST_DAY_SECONDS = 30 // un día entero (y su noche) en 30s: se nota el cambio sin esperar
 const DRAG_SENSITIVITY = 0.006
 
 const CHUNK_VOLUME = CHUNK_SIZE * WORLD_HEIGHT * CHUNK_SIZE
@@ -91,19 +92,25 @@ class SurfaceWorld {
   }
 }
 
-/** busca cerca del origen un punto en montañas (así arriba se ve el bosque de abajo y los picos alrededor) */
-function findMountainSpot(world: SurfaceWorld, x0: number, z0: number): { x: number; z: number } {
-  for (let r = 0; r < 160; r++) {
-    for (let dx = -r; dx <= r; dx++) {
-      for (let dz = -r; dz <= r; dz++) {
-        if (Math.abs(dx) !== r && Math.abs(dz) !== r) continue
-        const x = x0 + dx
-        const z = z0 + dz
-        if (world.column(x, z).biome === 'mountains') return { x, z }
+const PEAK_SEARCH = 100 // en bloques: cuánto se busca alrededor del origen la cumbre más alta
+
+/** busca la columna de montaña más alta en un cuadro alrededor del origen: la cumbre más épica que haya cerca */
+function findMountainPeak(world: SurfaceWorld, x0: number, z0: number): { x: number; z: number } {
+  let best = { x: x0, z: z0 }
+  let bestH = -Infinity
+  for (let dx = -PEAK_SEARCH; dx <= PEAK_SEARCH; dx++) {
+    for (let dz = -PEAK_SEARCH; dz <= PEAK_SEARCH; dz++) {
+      const x = x0 + dx
+      const z = z0 + dz
+      const col = world.column(x, z)
+      if (col.biome !== 'mountains') continue
+      if (col.height > bestH) {
+        bestH = col.height
+        best = { x, z }
       }
     }
   }
-  return { x: x0, z: z0 }
+  return best
 }
 
 export function PanoramaBackground() {
@@ -121,12 +128,15 @@ export function PanoramaBackground() {
     const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
     renderer.setSize(mount.clientWidth, mount.clientHeight)
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
     mount.appendChild(renderer.domElement)
 
     const scene = new THREE.Scene()
     scene.fog = new THREE.Fog(0x87c8f0, 60, 380)
-    const camera = new THREE.PerspectiveCamera(70, mount.clientWidth / mount.clientHeight, 0.05, 600)
+    const camera = new THREE.PerspectiveCamera(120, mount.clientWidth / mount.clientHeight, 0.05, 600)
     camera.layers.enable(SKY_LAYER)
+    camera.rotation.order = 'YXZ'
 
     let queue: [number, number][] = []
 
@@ -139,13 +149,15 @@ export function PanoramaBackground() {
         water: new WaterMaterial(atlas.texture),
       }
       const world = new SurfaceWorld(SEED)
-      const spot = findMountainSpot(world, 0, 0)
+      const spot = findMountainPeak(world, 0, 0)
       const groundY = world.heightAt(spot.x, spot.z)
-      // el punto que la cámara mira siempre, dando la vuelta alrededor de él
-      target = new THREE.Vector3(spot.x + 0.5, groundY + 6, spot.z + 0.5)
+      // dónde está parada la cámara: no se mueve, sólo gira sobre sí misma
+      target = new THREE.Vector3(spot.x + 0.5, groundY + EYE_HEIGHT, spot.z + 0.5)
 
-      sky = new Sky(scene, false, SEED)
-      sky.time = 0.73 // anochecer: sol bajo, luz cálida
+      sky = new Sky(scene, true, SEED, 48)
+      sky.time = 0.73 // arranca al anochecer, y de ahí gira sola rapidísimo
+      // frozen=true para que Sky.update no la mueva sola con el día de 20 min del
+      // juego real; aquí la giramos a mano con FAST_DAY_SECONDS, mucho más rápido
       sky.frozen = true
 
       const source: BlockSource = {
@@ -164,13 +176,16 @@ export function PanoramaBackground() {
         for (let n = 0; n < CHUNKS_PER_FRAME && queue.length; n++) {
           const [cx, cz] = queue.shift()!
           const mesh = buildChunkMesh(source, uv, cx, cz)
+          const opaque = new THREE.Mesh(buffersToGeometry(mesh.opaque), materials.opaque)
+          const cutout = new THREE.Mesh(buffersToGeometry(mesh.cutout), materials.cutout)
+          const foliage = new THREE.Mesh(buffersToGeometry(mesh.foliage), materials.foliage)
+          const water = new THREE.Mesh(buffersToGeometry(mesh.water), materials.water)
+          opaque.castShadow = opaque.receiveShadow = true
+          cutout.receiveShadow = true // sin sombra propia: puertas y antorchas no la necesitan (igual que el juego)
+          foliage.castShadow = foliage.receiveShadow = true
+          water.receiveShadow = true
           const group = new THREE.Group()
-          group.add(
-            new THREE.Mesh(buffersToGeometry(mesh.opaque), materials.opaque),
-            new THREE.Mesh(buffersToGeometry(mesh.cutout), materials.cutout),
-            new THREE.Mesh(buffersToGeometry(mesh.foliage), materials.foliage),
-            new THREE.Mesh(buffersToGeometry(mesh.water), materials.water),
-          )
+          group.add(opaque, cutout, foliage, water)
           scene.add(group)
         }
       }
@@ -209,10 +224,15 @@ export function PanoramaBackground() {
       // gira solo mientras nadie lo esté arrastrando, y un ratito después de soltar
       if (!dragging && now - draggedAt > 800) yaw += (dt * Math.PI * 2) / SPIN_SECONDS
       if (target) {
-        camera.position.set(target.x + Math.cos(yaw) * ORBIT_RADIUS, target.y + ORBIT_HEIGHT, target.z + Math.sin(yaw) * ORBIT_RADIUS)
-        camera.lookAt(target)
+        // parada en el sitio, como el jugador: sólo gira la vista, con un pitch fijo hacia abajo
+        camera.position.copy(target)
+        camera.rotation.set(PITCH, yaw, 0)
       }
-      if (sky) sky.update(dt, scene, camera.position, false, 340)
+      if (sky) {
+        sky.time = (sky.time + dt / FAST_DAY_SECONDS) % 1
+        sky.update(dt, scene, camera.position, false, 340)
+        sky.updateShadowCamera(camera.position)
+      }
       renderer.render(scene, camera)
       raf = requestAnimationFrame(animate)
     }

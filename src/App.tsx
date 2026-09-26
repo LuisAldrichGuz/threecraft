@@ -52,7 +52,7 @@ const CONTROLS: [string, [string, string][]][] = [
 const EMPTY_HUD: Hud = {
   locked: false, ready: false, slot: 0, hotbar: [], fps: 0, x: 0, y: 0, z: 0, biome: 'plains',
   underwater: false, flying: false, debug: false, targetName: '', thirdPerson: false, skin: 'aldrich', seed: 0,
-  shadows: true, renderRadius: 8, timeFlowing: true, loading: 0, spawnProgress: 0, time: 0,
+  shadows: true, shadowDistance: 64, fov: 100, renderRadius: 8, timeFlowing: true, loading: 0, spawnProgress: 0, time: 0,
   quality: 'auto', effective: 'media', ssao: false, bloom: false, vignette: false, godRays: true, resolution: 1, gpu: '', music: true, musicVolume: 0.5, track: null,
 }
 
@@ -512,6 +512,23 @@ function App() {
                   <button className="mc-btn" onClick={() => game?.setEffect('vignette', !hud.vignette)}>Viñeta: {hud.vignette ? 'Sí' : 'No'}</button>
                 </div>
                 <button className="mc-btn wide" onClick={() => game?.setEffect('ssao', !hud.ssao)}>Oclusión ambiental de pantalla: {hud.ssao ? 'Sí' : 'No'} (cara)</button>
+                {hud.shadows && (
+                  <>
+                    <div className="slider-row">
+                      <span className="mc-text small">Distancia de sombras</span>
+                      <span className="mc-text small slider-value">{hud.shadowDistance} bloques</span>
+                    </div>
+                    <input
+                      className="mc-slider"
+                      type="range"
+                      min={24}
+                      max={128}
+                      step={8}
+                      value={hud.shadowDistance}
+                      onChange={(e) => game?.setShadowDistance(Number(e.target.value))}
+                    />
+                  </>
+                )}
                 <div className="slider-row">
                   <span className="mc-text small">Resolución</span>
                   <span className="mc-text small slider-value">{Math.round(hud.resolution * 100)}%</span>
@@ -537,6 +554,19 @@ function App() {
                   step={1}
                   value={hud.renderRadius}
                   onChange={(e) => game?.setRenderRadius(Number(e.target.value))}
+                />
+                <div className="slider-row">
+                  <span className="mc-text small">Campo de visión</span>
+                  <span className="mc-text small slider-value">{hud.fov}°</span>
+                </div>
+                <input
+                  className="mc-slider"
+                  type="range"
+                  min={30}
+                  max={120}
+                  step={5}
+                  value={hud.fov}
+                  onChange={(e) => game?.setFov(Number(e.target.value))}
                 />
                 <button className="mc-btn wide" onClick={() => setTab('menu')}>Listo</button>
               </div>

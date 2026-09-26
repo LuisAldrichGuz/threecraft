@@ -126,6 +126,10 @@ export interface Settings {
   thirdPerson: boolean
   renderRadius: number
   shadows: boolean
+  /** medio ancho del cuadro donde el sol pinta sombra, en bloques desde el jugador */
+  shadowDistance: number
+  /** campo de visión en primera persona; la de tercera va siempre 35° por debajo */
+  fov: number
   timeFlowing: boolean
   /** preset de gráficos; 'auto' elige por el hardware y baja solo si va lento */
   quality: Quality
@@ -142,7 +146,7 @@ export interface Settings {
 export type Quality = 'auto' | 'baja' | 'media' | 'alta' | 'ultra'
 
 export const DEFAULT_SETTINGS: Settings = {
-  seed: 1337, skin: 'aldrich', thirdPerson: false, renderRadius: 6, shadows: true, timeFlowing: true,
+  seed: 1337, skin: 'aldrich', thirdPerson: false, renderRadius: 6, shadows: true, shadowDistance: 64, fov: 100, timeFlowing: true,
   quality: 'auto', ssao: false, bloom: false, vignette: false, godRays: true, resolution: 1,
   music: true, musicVolume: 0.3,
 }

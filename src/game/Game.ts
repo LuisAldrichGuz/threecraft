@@ -54,6 +54,8 @@ export interface Hud {
   skin: string
   seed: number
   shadows: boolean
+  shadowDistance: number
+  fov: number
   renderRadius: number
   timeFlowing: boolean
   quality: Quality
@@ -83,9 +85,9 @@ export interface GameCallbacks {
 }
 
 const REACH = 5
-// la cámara como en el juego 3D del portafolio (`primeraPersona.ts`)
-const FOV_FIRST = 100
-const FOV_THIRD = 65
+// la cámara como en el juego 3D del portafolio (`primeraPersona.ts`); en tercera
+// siempre 35° menos, para que se sienta el mismo "acercamiento" al bajar el slider
+const FOV_THIRD_OFFSET = 35
 const SENSITIVITY = 0.0022
 /** lo que tarda la cámara de tercera persona en alcanzar su sitio (constante de tiempo) */
 const CAMERA_SMOOTH = 0.09
@@ -217,7 +219,7 @@ export class Game {
     // el plano lejano tiene que cubrir lo que pida la distancia de render, si no los chunks de más
     // allá se recortan sin avisar (con 64 chunks el mundo entero desaparecía por esto)
     const far = Math.max(700, this.settings.renderRadius * CHUNK_SIZE * 1.2)
-    this.camera = new THREE.PerspectiveCamera(FOV_FIRST, window.innerWidth / window.innerHeight, 0.05, far)
+    this.camera = new THREE.PerspectiveCamera(this.settings.fov, window.innerWidth / window.innerHeight, 0.05, far)
     this.camera.layers.enable(SKY_LAYER)
     this.handCamera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 10)
     this.godRays = new GodRays(window.innerWidth, window.innerHeight)
@@ -286,7 +288,7 @@ export class Game {
     }
     this.heldMaterial = new THREE.MeshLambertMaterial({ map: this.atlas.texture, vertexColors: true })
 
-    this.sky = new Sky(this.scene, this.settings.shadows, this.settings.seed)
+    this.sky = new Sky(this.scene, this.settings.shadows, this.settings.seed, this.settings.shadowDistance)
     // la hora guardada con el mundo manda sobre el ajuste global
     const savedTime = loadPlayer(this.settings.seed)
     if (savedTime?.time !== undefined) this.sky.time = savedTime.time
@@ -773,6 +775,19 @@ export class Game {
     location.reload()
   }
 
+  setFov(v: number) {
+    this.settings.fov = v
+    saveSettings(this.settings)
+    this.pushHud()
+  }
+
+  setShadowDistance(d: number) {
+    this.settings.shadowDistance = d
+    saveSettings(this.settings)
+    this.sky?.setShadowDistance(d)
+    this.pushHud()
+  }
+
   setTime(t: number) {
     if (this.sky) this.sky.time = t
     this.pushHud()
@@ -997,7 +1012,7 @@ export class Game {
     this.camera.rotation.order = 'YXZ'
     this.model.root.visible = true
 
-    const wantFov = this.cameraMode === 0 ? FOV_FIRST : FOV_THIRD
+    const wantFov = this.cameraMode === 0 ? this.settings.fov : this.settings.fov - FOV_THIRD_OFFSET
     if (Math.abs(this.camera.fov - wantFov) > 0.01) {
       this.camera.fov += (wantFov - this.camera.fov) * (1 - Math.exp(-dt / 0.12))
       if (Math.abs(this.camera.fov - wantFov) < 0.05) this.camera.fov = wantFov
@@ -1019,8 +1034,11 @@ export class Game {
     const hit = raycastVoxel(this.world, eye, dir, dist, true)
     if (hit) dist = Math.max(0.5, eye.distanceTo(hit.place) - 0.3)
     this.cameraGoal.copy(eye).addScaledVector(dir, dist)
-    // la cámara viaja hasta su sitio en vez de saltar (como el seguimiento del portafolio)
-    if (!this.cameraReady) {
+    // la cámara viaja hasta su sitio en vez de saltar (como el seguimiento del portafolio),
+    // salvo que una pared se le haya metido más cerca de lo que ya estaba: corriendo,
+    // agachado o deslizándose en una esquina, si no se salta ya se atraviesa un frame
+    const closingIn = hit !== null && eye.distanceTo(this.camera.position) > dist
+    if (!this.cameraReady || closingIn) {
       this.camera.position.copy(this.cameraGoal)
       this.cameraReady = true
     } else {
@@ -1232,6 +1250,8 @@ export class Game {
       skin: this.settings.skin,
       seed: this.settings.seed,
       shadows: this.settings.shadows,
+      shadowDistance: this.settings.shadowDistance,
+      fov: this.settings.fov,
       quality: this.settings.quality,
       effective: this.effective,
       ssao: this.settings.ssao,
