@@ -75,11 +75,18 @@ export class Music {
   }
 
   stop() {
+    this.loadToken++
     if (this.audio.isPlaying) this.audio.stop()
     this.current = null
     this.onTrack(null)
     this.waiting = true
     this.timer = GAP_MIN / 2
+  }
+
+  /** al cerrar el mundo: nada puede seguir sonando ni llegar tarde */
+  dispose() {
+    this.enabled = false
+    this.stop()
   }
 
   /** salta a la siguiente pista ya */
@@ -113,13 +120,16 @@ export class Music {
   }
 
   private loaded = false
+  private loadToken = 0
 
   private play(track: Track) {
     this.loaded = false
+    // si mientras carga se pide otra (skip, cambio de mundo), la vieja se descarta al llegar
+    const token = ++this.loadToken
     this.loader.load(
       `/music/${track.file}.ogg`,
       (buffer) => {
-        if (!this.enabled) return
+        if (!this.enabled || token !== this.loadToken) return
         if (this.audio.isPlaying) this.audio.stop()
         this.audio.setBuffer(buffer)
         this.audio.setLoop(false)
