@@ -21,9 +21,9 @@ export const TRACKS: Track[] = [
   { file: 'champ_de_tournesol', title: 'Champ de tournesol', author: 'Loyalty Freak Music (Komiku)', url: 'https://opengameart.org/content/champ-de-tournesol' },
 ]
 
-/** silencio entre pistas, en segundos */
-const GAP_MIN = 60
-const GAP_MAX = 180
+/** silencio entre pistas, en segundos: como Minecraft, que deja pasar minutos callado */
+const GAP_MIN = 120
+const GAP_MAX = 420
 const FADE = 2.5
 
 export class Music {
@@ -43,7 +43,8 @@ export class Music {
   constructor(listener: THREE.AudioListener) {
     this.audio = new THREE.Audio(listener)
     this.audio.setVolume(0)
-    this.timer = 8 + Math.random() * 20
+    // la primera tarda en llegar, y nunca lo mismo
+    this.timer = 20 + Math.random() * 100
   }
 
   private next(): Track {
@@ -80,7 +81,7 @@ export class Music {
     this.current = null
     this.onTrack(null)
     this.waiting = true
-    this.timer = GAP_MIN / 2
+    this.timer = 30 + Math.random() * 90
   }
 
   /** al cerrar el mundo: nada puede seguir sonando ni llegar tarde */
