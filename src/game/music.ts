@@ -43,8 +43,8 @@ export class Music {
   constructor(listener: THREE.AudioListener) {
     this.audio = new THREE.Audio(listener)
     this.audio.setVolume(0)
-    // la primera tarda en llegar, y nunca lo mismo
-    this.timer = 20 + Math.random() * 100
+    // al entrar al mundo suena una de entrada; las siguientes esperan su hueco
+    this.timer = 0
   }
 
   private next(): Track {

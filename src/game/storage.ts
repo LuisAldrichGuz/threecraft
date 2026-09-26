@@ -94,6 +94,9 @@ export interface PlayerSave {
   hotbar: number[]
   slot: number
   flying: boolean
+  /** hora del mundo (0..1) y si corre: van con el mundo, para que un mapa exportado se vea como lo dejaste */
+  time?: number
+  timeFlowing?: boolean
 }
 
 export const loadPlayer = (seed: number) => read<PlayerSave | null>(`player:${seed}`, null)

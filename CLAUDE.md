@@ -23,6 +23,7 @@ sin librerías de motor. Este archivo es el **índice**; el detalle vive en
 | UI estilo Minecraft: pausa, inventario por categorías con iconos 3D, hotbar, skins, mundo (semilla, distancia, sombras, día/noche), F3 | ✅ |
 | Guardado en `localStorage` por semilla: ediciones por chunk, jugador, hotbar, ajustes · **Exportar / Importar** `.threecraft` desde «Cargar mundos» | ✅ |
 | **Mundo de serie** «Castillo de Aldrich» (`public/worlds/aldrich.threecraft`): el **Castle Lividus of Aeritus** de KyleCRat (CC BY-NC-SA 3.0, crédito en pausa y README) con ALDRICH en oro encima · se instala y abre solo la primera vez · se genera con `npx tsx scripts/build-castle.ts` desde `scripts/castle/lividus.json.gz` | ✅ |
+| El `.threecraft` guarda con el jugador la **hora y si el tiempo corre**; `npx tsx scripts/bundle-world.ts` convierte el último export de ~/Descargas en el mundo de serie (posición, hora y todo) · al entrar a un mundo **suena una canción de entrada** | ✅ |
 | **Luz de bloque**: antorchas, linternas y piedra luminosa iluminan (inundación en el mesher, cálida, visible de noche y frenada por lo opaco: eso son sus sombras) · viaja en el atributo `blockLight` y la suma `blockLight.ts` | ✅ |
 | Ediciones de chunk en **base64** (`encodeEdits`, ~5 caracteres por bloque): el castillo son 250 000 ediciones y en JSON no cabían en los ~5 MB de localStorage · `.threecraft` v2, el v1 se sigue leyendo | ✅ |
 | Multijugador, mobs, crafteo, redstone | ✗ no hay |
@@ -70,6 +71,7 @@ src/game/
 scripts/build-castle.ts  construye el mundo de serie: planta el castillo de scripts/castle/ en el
                          sitio de la semilla cuyo relieve más se parece al original y parchea el
                          terreno debajo (sólo se guardan diferencias con lo que genera la semilla)
+scripts/bundle-world.ts  el .threecraft exportado (~/Descargas) pasa a ser el mundo de serie tal cual
 scripts/castle/          lividus.json.gz: el castillo ya traducido a ids del catálogo (edificios
                          enteros + la piel visible del terreno original + su mapa de alturas)
 src/App.tsx, App.css   la UI (React), estilo Minecraft con CSS propio
