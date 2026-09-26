@@ -1,14 +1,16 @@
 /**
- * Convierte un `.threecraft` exportado desde el juego (el que baja a
- * ~/Descargas) en el mundo de serie: lo copia a public/worlds/aldrich.threecraft
- * tal cual, con el jugador donde estaba, su hora y si el tiempo corre.
+ * Mete en el mundo de serie (public/worlds/aldrich.threecraft, el que genera
+ * build-castle.ts) el jugador de un `.threecraft` exportado desde el juego:
+ * dónde estaba, hacia dónde miraba, su hora y si el tiempo corre. Los chunks
+ * NO se copian del export: el castillo es el del script, que puede ser más nuevo.
  *
  *   npx tsx scripts/bundle-world.ts [ruta]   (sin ruta: el .threecraft más nuevo de ~/Descargas)
  */
-import { copyFileSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
+const OUT = 'public/worlds/aldrich.threecraft'
 const dl = join(homedir(), 'Downloads')
 const src =
   process.argv[2] ??
@@ -17,10 +19,17 @@ const src =
     .map((f) => join(dl, f))
     .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0]
 if (!src) throw new Error('no hay ningún .threecraft en ~/Descargas')
-const file = JSON.parse(readFileSync(src, 'utf8'))
-if (file.format !== 'threecraft-world') throw new Error('no es un mundo de ThreeCraft: ' + src)
-const p = file.player
-console.log(src, '→ semilla', file.meta.seed, 'chunks', Object.keys(file.chunks).length)
-console.log('jugador', p ? `${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)} · hora ${p.time ?? '(sin hora: expórtalo otra vez)'} · tiempo ${p.timeFlowing === undefined ? '(sin guardar)' : p.timeFlowing ? 'corre' : 'parado'}` : 'ninguno')
-copyFileSync(src, 'public/worlds/aldrich.threecraft')
-console.log('listo: public/worlds/aldrich.threecraft')
+const exp = JSON.parse(readFileSync(src, 'utf8'))
+if (exp.format !== 'threecraft-world') throw new Error('no es un mundo de ThreeCraft: ' + src)
+const world = JSON.parse(readFileSync(OUT, 'utf8'))
+if (exp.meta.seed !== world.meta.seed) throw new Error(`semilla distinta: export ${exp.meta.seed}, mundo de serie ${world.meta.seed}`)
+const p = exp.player
+if (!p) throw new Error('el export no trae jugador')
+console.log(src)
+console.log('jugador', `${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)} · hora ${p.time ?? '(sin hora: expórtalo otra vez)'} · tiempo ${p.timeFlowing === undefined ? '(sin guardar)' : p.timeFlowing ? 'corre' : 'parado'}`)
+world.player = p
+if (exp.thumbnail) world.thumbnail = exp.thumbnail
+const json = JSON.stringify(world)
+writeFileSync(OUT, json)
+writeFileSync(join(dl, 'Castillo de Aldrich.threecraft'), json)
+console.log('listo:', OUT, Math.round(json.length / 1024), 'KB')

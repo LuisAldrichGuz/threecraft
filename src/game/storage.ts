@@ -26,31 +26,49 @@ function write(key: string, value: unknown) {
 export type ChunkEdits = Record<number, number>
 
 /**
- * Las ediciones van en base64 de pares (índice, bloque) de 16 bits: ~5
- * caracteres por bloque contra ~12 del JSON. Importa porque localStorage
- * tiene unos 5 MB y el castillo de serie son 250 000 ediciones.
- * Se sigue leyendo el JSON viejo (empieza por `{`).
+ * Las ediciones van en base64 de tiradas (índice u16, bloque u16, largo u8):
+ * un muro o una capa de suelo son celdas seguidas con el mismo bloque, así que
+ * salen a ~1 byte por bloque contra ~12 del JSON. Importa porque localStorage
+ * tiene unos 5 MB y el castillo de serie son casi dos millones de ediciones.
+ * Se siguen leyendo el JSON viejo (empieza por `{`) y los pares sin tirada
+ * (base64 a secas); las tiradas llevan `#` delante.
  */
 export function encodeEdits(edits: ChunkEdits): string {
-  const keys = Object.keys(edits)
-  const bytes = new Uint8Array(keys.length * 4)
-  keys.forEach((k, i) => {
-    const idx = Number(k)
+  const keys = Object.keys(edits).map(Number).sort((a, b) => a - b)
+  const bytes = new Uint8Array(keys.length * 5)
+  let n = 0
+  let i = 0
+  while (i < keys.length) {
+    const idx = keys[i]
     const b = edits[idx]
-    bytes[i * 4] = idx & 255
-    bytes[i * 4 + 1] = idx >> 8
-    bytes[i * 4 + 2] = b & 255
-    bytes[i * 4 + 3] = b >> 8
-  })
+    let run = 1
+    while (i + run < keys.length && run < 256 && keys[i + run] === idx + run && edits[idx + run] === b) run++
+    bytes[n++] = idx & 255
+    bytes[n++] = idx >> 8
+    bytes[n++] = b & 255
+    bytes[n++] = b >> 8
+    bytes[n++] = run - 1
+    i += run
+  }
   let bin = ''
-  for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192))
-  return btoa(bin)
+  for (let k = 0; k < n; k += 8192) bin += String.fromCharCode(...bytes.subarray(k, Math.min(n, k + 8192)))
+  return '#' + btoa(bin)
 }
 
 export function decodeEdits(raw: string): ChunkEdits {
   if (raw.startsWith('{')) return JSON.parse(raw)
-  const bin = atob(raw)
   const edits: ChunkEdits = {}
+  if (raw.startsWith('#')) {
+    const bin = atob(raw.slice(1))
+    for (let i = 0; i + 4 < bin.length; i += 5) {
+      const idx = bin.charCodeAt(i) | (bin.charCodeAt(i + 1) << 8)
+      const b = bin.charCodeAt(i + 2) | (bin.charCodeAt(i + 3) << 8)
+      const run = bin.charCodeAt(i + 4) + 1
+      for (let k = 0; k < run; k++) edits[idx + k] = b
+    }
+    return edits
+  }
+  const bin = atob(raw)
   for (let i = 0; i + 3 < bin.length; i += 4) {
     edits[bin.charCodeAt(i) | (bin.charCodeAt(i + 1) << 8)] = bin.charCodeAt(i + 2) | (bin.charCodeAt(i + 3) << 8)
   }
@@ -249,7 +267,7 @@ export function exportWorld(seed: number): WorldFile {
     const k = localStorage.key(i)!
     if (!k.startsWith(prefix)) continue
     const raw = localStorage.getItem(k)
-    if (raw) chunks[k.slice(prefix.length)] = raw.startsWith('{') ? encodeEdits(decodeEdits(raw)) : raw
+    if (raw) chunks[k.slice(prefix.length)] = raw.startsWith('#') ? raw : encodeEdits(decodeEdits(raw))
   }
   return {
     format: 'threecraft-world',

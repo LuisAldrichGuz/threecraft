@@ -62,32 +62,13 @@ function has(x: number, y: number, z: number): boolean {
   return !!c && c[idx(x - Math.floor(x / CHUNK_SIZE) * CHUNK_SIZE, y, z - Math.floor(z / CHUNK_SIZE) * CHUNK_SIZE)] !== undefined
 }
 
-// ---- dónde: el sitio cuyo relieve más se parece al del castillo original (con la
-// altura ajustada por la mediana), para que el parche del terreno sea el mínimo
-let best = { ox: 0, oz: 0, score: Infinity, dy: 0, ground: 0 }
-const STEP = 8
-for (let ox = -1600; ox <= 1600; ox += 16) {
-  for (let oz = -1600; oz <= 1600; oz += 16) {
-    const diffs: number[] = []
-    let bad = 0
-    let green = 0
-    for (let x = 0; x < W; x += STEP) for (let z = 0; z < D; z += STEP) {
-      const c = gen.column(ox + x, oz + z)
-      if (c.biome === 'ocean') bad++
-      if (c.biome === 'plains' || c.biome === 'forest' || c.biome === 'birch_forest' || c.biome === 'dark_forest') green++
-      diffs.push(c.height - data.surface[x][z])
-    }
-    // en tierra y verde: nada de plantar un castillo medieval en un desierto
-    if (bad > diffs.length / 20 || green < diffs.length * 0.7) continue
-    diffs.sort((a, b) => a - b)
-    const med = diffs[diffs.length >> 1]
-    const score = diffs.reduce((s, d) => s + Math.abs(d - med), 0) / diffs.length + Math.hypot(ox, oz) / 3000
-    if (score < best.score) best = { ox, oz, score, dy: med }
-  }
-}
-const { ox, oz } = best
-const DY = best.dy
-best.ground = OLD_GROUND + DY
+// ---- dónde: sitio fijo. Se eligió buscando el relieve más parecido al original
+// sobre la primera caja (x126..258, z150..362) y se deja clavado para que las
+// posiciones exportadas (el spawn de Luis) sigan valiendo aunque la caja crezca.
+const ox = 16 - (126 - X0)
+const oz = 672 - (150 - Z0)
+const DY = -8
+const best = { ox, oz, score: 0, ground: OLD_GROUND + DY }
 console.log('castillo en', ox, oz, 'suelo', best.ground, 'dy', DY, 'llanura', best.score.toFixed(2))
 
 // ---- el terreno que generaría la semilla en la zona, para parchear sólo lo que difiere
