@@ -22,7 +22,8 @@ sin librerías de motor. Este archivo es el **índice**; el detalle vive en
 | Físicas: aceleración/coyote/buffer del portafolio a escala de Minecraft, salto fijo de un bloque, nadar, volar (doble espacio), agachado sin caerse | ✅ |
 | UI estilo Minecraft: pausa, inventario por categorías con iconos 3D, hotbar, skins, mundo (semilla, distancia, sombras, día/noche), F3 | ✅ |
 | Guardado en `localStorage` por semilla: ediciones por chunk, jugador, hotbar, ajustes · **Exportar / Importar** `.threecraft` desde «Cargar mundos» | ✅ |
-| **Mundo de serie** «Castillo de Aldrich» (`public/worlds/aldrich.threecraft`): se instala y abre solo la primera vez · se genera con `npx tsx scripts/build-castle.ts` | ✅ |
+| **Mundo de serie** «Castillo de Aldrich» (`public/worlds/aldrich.threecraft`): el **Castle Lividus of Aeritus** de KyleCRat (CC BY-NC-SA 3.0, crédito en pausa y README) con ALDRICH en oro encima · se instala y abre solo la primera vez · se genera con `npx tsx scripts/build-castle.ts` desde `scripts/castle/lividus.json.gz` | ✅ |
+| Ediciones de chunk en **base64** (`encodeEdits`, ~5 caracteres por bloque): el castillo son 250 000 ediciones y en JSON no cabían en los ~5 MB de localStorage · `.threecraft` v2, el v1 se sigue leyendo | ✅ |
 | Multijugador, mobs, crafteo, redstone | ✗ no hay |
 
 ## Correr
@@ -64,7 +65,11 @@ src/game/
   raycast.ts       DDA por voxels para saber qué bloque miras
   icons.ts         iconos isométricos de cada bloque para la UI
   storage.ts       localStorage: chunks editados, jugador, ajustes; export/import .threecraft; mundo de serie
-scripts/build-castle.ts  construye el mundo de serie (castillo + ALDRICH) sobre el terreno de su semilla
+scripts/build-castle.ts  construye el mundo de serie: planta el castillo de scripts/castle/ en el
+                         sitio de la semilla cuyo relieve más se parece al original y parchea el
+                         terreno debajo (sólo se guardan diferencias con lo que genera la semilla)
+scripts/castle/          lividus.json.gz: el castillo ya traducido a ids del catálogo (edificios
+                         enteros + la piel visible del terreno original + su mapa de alturas)
 src/App.tsx, App.css   la UI (React), estilo Minecraft con CSS propio
 public/textures/       Faithful 32x por nombre de Minecraft (+ LICENSE-FAITHFUL.txt y CREDITS.md)
 public/sounds/         Kenney CC0 (+ LICENSE.md)

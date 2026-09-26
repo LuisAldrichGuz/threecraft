@@ -25,10 +25,42 @@ function write(key: string, value: unknown) {
 /** ediciones de un chunk: índice local → bloque */
 export type ChunkEdits = Record<number, number>
 
+/**
+ * Las ediciones van en base64 de pares (índice, bloque) de 16 bits: ~5
+ * caracteres por bloque contra ~12 del JSON. Importa porque localStorage
+ * tiene unos 5 MB y el castillo de serie son 250 000 ediciones.
+ * Se sigue leyendo el JSON viejo (empieza por `{`).
+ */
+export function encodeEdits(edits: ChunkEdits): string {
+  const keys = Object.keys(edits)
+  const bytes = new Uint8Array(keys.length * 4)
+  keys.forEach((k, i) => {
+    const idx = Number(k)
+    const b = edits[idx]
+    bytes[i * 4] = idx & 255
+    bytes[i * 4 + 1] = idx >> 8
+    bytes[i * 4 + 2] = b & 255
+    bytes[i * 4 + 3] = b >> 8
+  })
+  let bin = ''
+  for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192))
+  return btoa(bin)
+}
+
+export function decodeEdits(raw: string): ChunkEdits {
+  if (raw.startsWith('{')) return JSON.parse(raw)
+  const bin = atob(raw)
+  const edits: ChunkEdits = {}
+  for (let i = 0; i + 3 < bin.length; i += 4) {
+    edits[bin.charCodeAt(i) | (bin.charCodeAt(i + 1) << 8)] = bin.charCodeAt(i + 2) | (bin.charCodeAt(i + 3) << 8)
+  }
+  return edits
+}
+
 export function loadChunkEdits(seed: number, cx: number, cz: number): ChunkEdits {
   try {
     const raw = localStorage.getItem(`${CHUNK_PREFIX}${seed}:${cx},${cz}`)
-    return raw ? JSON.parse(raw) : {}
+    return raw ? decodeEdits(raw) : {}
   } catch {
     return {}
   }
@@ -43,7 +75,7 @@ export function saveChunkEdits(seed: number, cx: number, cz: number, edits: Chun
   flushTimer = window.setTimeout(() => {
     for (const [key, value] of pending) {
       try {
-        localStorage.setItem(key, JSON.stringify(value))
+        localStorage.setItem(key, encodeEdits(value))
       } catch {
         /* ídem */
       }
@@ -198,30 +230,27 @@ export function migrateLegacyWorld() {
  */
 export interface WorldFile {
   format: 'threecraft-world'
-  version: 1
+  version: 1 | 2
   meta: { seed: number; name: string; createdAt: number }
   player: PlayerSave | null
-  /** "cx,cz" → ediciones del chunk */
-  chunks: Record<string, ChunkEdits>
+  /** "cx,cz" → ediciones del chunk: base64 de `encodeEdits` (v2) o el objeto (v1) */
+  chunks: Record<string, ChunkEdits | string>
   thumbnail?: string
 }
 
 export function exportWorld(seed: number): WorldFile {
   const meta = listWorlds().find((w) => w.seed === seed)
-  const chunks: Record<string, ChunkEdits> = {}
+  const chunks: Record<string, string> = {}
   const prefix = `${CHUNK_PREFIX}${seed}:`
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i)!
     if (!k.startsWith(prefix)) continue
-    try {
-      chunks[k.slice(prefix.length)] = JSON.parse(localStorage.getItem(k) || '{}')
-    } catch {
-      /* chunk corrupto: se salta */
-    }
+    const raw = localStorage.getItem(k)
+    if (raw) chunks[k.slice(prefix.length)] = raw.startsWith('{') ? encodeEdits(decodeEdits(raw)) : raw
   }
   return {
     format: 'threecraft-world',
-    version: 1,
+    version: 2,
     meta: { seed, name: meta?.name ?? 'Mundo', createdAt: meta?.createdAt ?? Date.now() },
     player: loadPlayer(seed),
     chunks,
@@ -235,7 +264,7 @@ export function importWorld(file: WorldFile): number {
   const seed = file.meta.seed
   removeWorld(seed)
   for (const [key, edits] of Object.entries(file.chunks)) {
-    localStorage.setItem(`${CHUNK_PREFIX}${seed}:${key}`, JSON.stringify(edits))
+    localStorage.setItem(`${CHUNK_PREFIX}${seed}:${key}`, typeof edits === 'string' ? edits : encodeEdits(edits))
   }
   if (file.player) savePlayer(seed, file.player)
   upsertWorld({ seed, name: file.meta.name, createdAt: file.meta.createdAt, lastPlayed: Date.now(), thumbnail: file.thumbnail })
