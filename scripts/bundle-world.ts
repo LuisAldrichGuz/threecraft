@@ -1,8 +1,8 @@
 /**
- * Mete en el mundo de serie (public/worlds/aldrich.threecraft, el que genera
- * build-castle.ts) el jugador de un `.threecraft` exportado desde el juego:
- * dónde estaba, hacia dónde miraba, su hora y si el tiempo corre. Los chunks
- * NO se copian del export: el castillo es el del script, que puede ser más nuevo.
+ * Hace mundo de serie (public/worlds/aldrich.threecraft) un `.threecraft`
+ * exportado desde el juego, ENTERO: sus bloques (la ciudad más lo que Luis
+ * haya roto o puesto), el jugador, su hora y si el tiempo corre.
+ * `build-castle.ts` sólo hace falta para regenerar la ciudad desde cero.
  *
  *   npx tsx scripts/bundle-world.ts [ruta]   (sin ruta: el .threecraft más nuevo de ~/Descargas)
  */
@@ -21,15 +21,10 @@ const src =
 if (!src) throw new Error('no hay ningún .threecraft en ~/Descargas')
 const exp = JSON.parse(readFileSync(src, 'utf8'))
 if (exp.format !== 'threecraft-world') throw new Error('no es un mundo de ThreeCraft: ' + src)
-const world = JSON.parse(readFileSync(OUT, 'utf8'))
-if (exp.meta.seed !== world.meta.seed) throw new Error(`semilla distinta: export ${exp.meta.seed}, mundo de serie ${world.meta.seed}`)
 const p = exp.player
 if (!p) throw new Error('el export no trae jugador')
 console.log(src)
-console.log('jugador', `${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)} · hora ${p.time ?? '(sin hora: expórtalo otra vez)'} · tiempo ${p.timeFlowing === undefined ? '(sin guardar)' : p.timeFlowing ? 'corre' : 'parado'}`)
-world.player = p
-if (exp.thumbnail) world.thumbnail = exp.thumbnail
-const json = JSON.stringify(world)
+console.log('chunks', Object.keys(exp.chunks).length, '· jugador', `${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)} · hora ${p.time ?? '(sin hora: expórtalo otra vez)'} · tiempo ${p.timeFlowing === undefined ? '(sin guardar)' : p.timeFlowing ? 'corre' : 'parado'}`)
+const json = JSON.stringify(exp)
 writeFileSync(OUT, json)
-writeFileSync(join(dl, 'Castillo de Aldrich.threecraft'), json)
 console.log('listo:', OUT, Math.round(json.length / 1024), 'KB')
