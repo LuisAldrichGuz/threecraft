@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { withBlockLight } from './blockLight'
 
 /**
  * Las hojas y plantas se mecen con el viento: el mismo material de recorte
@@ -12,6 +13,7 @@ export class FoliageMaterial extends THREE.MeshLambertMaterial {
   constructor(map: THREE.Texture) {
     super({ map, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide })
     this.onBeforeCompile = (shader) => {
+      withBlockLight(shader)
       shader.uniforms.time = this.timeUniform
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nuniform float time;')

@@ -40,10 +40,18 @@ hongos y adoquín musgoso sueltos.
 
 ## Luz y mallado (`mesher.ts`)
 
-- **Campo de luz** por chunk con margen de 8: sol 15 desde arriba hasta el primer
-  opaco (hojas −1, agua −2), luego propagación BFS (−1 por paso) desde las celdas
-  a pleno sol que tocan algo más oscuro y desde lo que brilla (`glow`). Buffers
-  reutilizados entre chunks.
+- **Dos campos de luz** por chunk con margen de 14 (el alcance de una antorcha):
+  - **Cielo**: sol 15 desde arriba hasta el primer opaco (hojas −1, agua −2),
+    luego propagación BFS (−1 por paso) desde las celdas a pleno sol que tocan
+    algo más oscuro. Va al color del vértice, así que la noche lo apaga.
+  - **Bloque**: nace en lo que brilla (`glow` × 15: antorcha, linterna, piedra
+    luminosa) y se inunda igual, parándose contra lo opaco: por eso una pared
+    deja sombra. Va empaquetado con el cielo (`pack`: cielo | bloque << 4), sale
+    como el cuarto float del color (`(bloque/15)^1.4 × AO`) y llega al shader
+    como atributo `blockLight`; `blockLight.ts` lo suma cálido y por `max()`
+    sobre la luz del sol, así de día no se nota y de noche manda. Un Lambert
+    normal lo ignora. Poner o quitar algo que brilla remalla los 9 chunks.
+  Buffers reutilizados entre chunks.
 - Por cara: **oclusión ambiental** de 4 esquinas (3 vecinos por esquina) y la
   luz de la celda de delante; la diagonal del quad se elige según la oclusión.
   Color de vértice = sombreado de cara (arriba 1, lados 0.8/0.7, abajo 0.62) ×

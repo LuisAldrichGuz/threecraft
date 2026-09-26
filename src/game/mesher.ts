@@ -55,18 +55,34 @@ const FACES: FaceDef[] = [
 const CORNER_SIGNS: [number, number][] = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
 const AO_LEVELS = [0.66, 0.8, 0.91, 1]
 
-/** cuánto se ve con un nivel de luz 0..15: nunca negro del todo */
+/**
+ * La luz va en un número empaquetado: cielo (0..15) en los 4 bits bajos y luz
+ * de bloque (antorchas, piedra luminosa; 0..15) en los 4 altos. El cielo va al
+ * color del vértice (lo apaga la noche); la de bloque al alfa, que el shader
+ * suma cálida y sin que le afecte el sol (`blockLight.ts`).
+ */
+export const pack = (sky: number, blk: number) => sky | (blk << 4)
+const packMax = (a: number, b: number) => Math.max(a & 15, b & 15) | (Math.max(a >> 4, b >> 4) << 4)
+
+/** cuánto se ve con un nivel de luz de cielo 0..15: nunca negro del todo */
 function lightFactor(light: number): number {
-  const t = light / 15
+  const t = (light & 15) / 15
   return 0.32 + 0.68 * Math.pow(t, 1.1)
 }
+/** la luz de bloque cae más rápido: a 14 bloques de una antorcha ya no queda nada */
+function blockFactor(light: number): number {
+  return Math.pow((light >> 4) / 15, 1.4)
+}
 
-const MARGIN = 8
+// ⚠️ 14 = alcance de la luz de bloque: una antorcha a 14 bloques del borde aún toca el chunk
+const MARGIN = 14
 const LW = CHUNK_SIZE + MARGIN * 2
 const LSIZE = LW * WORLD_HEIGHT * LW
 
 // se reutilizan entre chunks: son ~130k celdas y pedirlas cada vez cuesta más que el mallado
 const lightData = new Uint8Array(LSIZE)
+const lightBlk = new Uint8Array(LSIZE)
+const lightSources = new Int32Array(4096)
 const lightBlocks = new Int16Array(LSIZE)
 const lightQueue = new Int32Array(LSIZE * 2)
 
@@ -74,6 +90,7 @@ class LightField {
   private baseX: number
   private baseZ: number
   data = lightData
+  blk = lightBlk
   blocks = lightBlocks
 
   constructor(baseX: number, baseZ: number) {
@@ -86,14 +103,16 @@ class LightField {
   }
 
   build(source: BlockSource) {
-    const { data, blocks } = this
+    const { data, blk, blocks } = this
     data.fill(0)
+    blk.fill(0)
     const queue = lightQueue
     let head = 0
     let tail = 0
     const push = (i: number) => {
       if (tail < queue.length) queue[tail++] = i
     }
+    let sources = 0
 
     for (let lx = 0; lx < LW; lx++) {
       for (let lz = 0; lz < LW; lz++) {
@@ -104,19 +123,14 @@ class LightField {
           const b = source.getBlockForMesh(x, y, z)
           const i = LightField.idx(lx, y, lz)
           blocks[i] = b
+          if (b !== UNKNOWN && blockDef(b).glow && sources < lightSources.length) lightSources[sources++] = i
           if (b === UNKNOWN || isOpaque(b)) {
             sun = 0
-            const glow = b === UNKNOWN ? 0 : blockDef(b).glow
-            if (glow) {
-              data[i] = Math.round(9 + 6 * glow)
-              push(i)
-            }
             continue
           }
           const def = blockDef(b)
           if (def.liquid) sun = Math.max(0, sun - 2)
           else if (def.cutout) sun = Math.max(0, sun - 1)
-          if (def.glow) sun = 15
           data[i] = sun
           if (sun > 1 && sun < 15) push(i)
         }
@@ -141,30 +155,45 @@ class LightField {
     }
 
     const N = [1, -1, LW, -LW, LW * LW, -LW * LW]
-    while (head < tail) {
-      const i = queue[head++]
-      const l = data[i] - 1
-      if (l <= 0) continue
-      const lx = i % LW
-      const lz = Math.floor(i / LW) % LW
-      const y = Math.floor(i / (LW * LW))
-      for (let k = 0; k < 6; k++) {
-        if (k === 0 && lx === LW - 1) continue
-        if (k === 1 && lx === 0) continue
-        if (k === 2 && lz === LW - 1) continue
-        if (k === 3 && lz === 0) continue
-        if (k === 4 && y === WORLD_HEIGHT - 1) continue
-        if (k === 5 && y === 0) continue
-        const j = i + N[k]
-        const b = blocks[j]
-        if (b === UNKNOWN || isOpaque(b)) continue
-        const nl = blockDef(b).liquid ? l - 1 : l
-        if (data[j] < nl) {
-          data[j] = nl
-          push(j)
+    // inundación: cada celda reparte su nivel menos uno a los vecinos que no sean opacos
+    const flood = (field: Uint8Array) => {
+      while (head < tail) {
+        const i = queue[head++]
+        const l = field[i] - 1
+        if (l <= 0) continue
+        const lx = i % LW
+        const lz = Math.floor(i / LW) % LW
+        const y = Math.floor(i / (LW * LW))
+        for (let k = 0; k < 6; k++) {
+          if (k === 0 && lx === LW - 1) continue
+          if (k === 1 && lx === 0) continue
+          if (k === 2 && lz === LW - 1) continue
+          if (k === 3 && lz === 0) continue
+          if (k === 4 && y === WORLD_HEIGHT - 1) continue
+          if (k === 5 && y === 0) continue
+          const j = i + N[k]
+          const b = blocks[j]
+          if (b === UNKNOWN || isOpaque(b)) continue
+          const nl = blockDef(b).liquid ? l - 1 : l
+          if (field[j] < nl) {
+            field[j] = nl
+            push(j)
+          }
         }
       }
     }
+    flood(data)
+
+    // luz de bloque: nace en la antorcha (o dentro de la piedra luminosa, que la
+    // suelta por sus caras) y se apaga contra lo opaco: eso son sus sombras
+    head = 0
+    tail = 0
+    for (let k = 0; k < sources; k++) {
+      const i = lightSources[k]
+      blk[i] = Math.round(15 * blockDef(blocks[i]).glow)
+      push(i)
+    }
+    flood(blk)
   }
 
   block(x: number, y: number, z: number): number {
@@ -176,13 +205,15 @@ class LightField {
     return this.blocks[LightField.idx(lx, y, lz)]
   }
 
+  /** empaquetada: cielo | bloque << 4 */
   light(x: number, y: number, z: number): number {
     if (y >= WORLD_HEIGHT) return 15
     if (y < 0) return 0
     const lx = x - this.baseX + MARGIN
     const lz = z - this.baseZ + MARGIN
     if (lx < 0 || lx >= LW || lz < 0 || lz >= LW) return 0
-    return this.data[LightField.idx(lx, y, lz)]
+    const i = LightField.idx(lx, y, lz)
+    return this.data[i] | (this.blk[i] << 4)
   }
 }
 
@@ -191,7 +222,7 @@ class GeometryBuilder {
   pos = new Float32Array(4096 * 3)
   norm = new Float32Array(4096 * 3)
   uv = new Float32Array(4096 * 2)
-  col = new Float32Array(4096 * 3)
+  col = new Float32Array(4096 * 4)
   idx = new Uint32Array(6144)
   verts = 0
   indices = 0
@@ -221,9 +252,11 @@ class GeometryBuilder {
     const vt = v0 + (v1 - v0) * heightScale
     const vs = def.dir[1] === 0 ? [vb, vb, vt, vt] : [v0, v0, v1, v1]
     const lf = lightFactor(light) * def.shade
+    const bf = blockFactor(light)
     for (let i = 0; i < 4; i++) {
       const c = def.corners[i]
       const p = (start + i) * 3
+      const q = (start + i) * 4
       this.pos[p] = x + c[0]
       const top = topHeights ? topHeights[i] : heightScale
       this.pos[p + 1] = c[1] === 1 ? y + top : y + yBase
@@ -234,9 +267,10 @@ class GeometryBuilder {
       this.uv[(start + i) * 2] = us[i]
       this.uv[(start + i) * 2 + 1] = vs[i]
       const v = lf * AO_LEVELS[ao[i]]
-      this.col[p] = v
-      this.col[p + 1] = v
-      this.col[p + 2] = v
+      this.col[q] = v
+      this.col[q + 1] = v
+      this.col[q + 2] = v
+      this.col[q + 3] = bf * AO_LEVELS[ao[i]]
     }
     const k = this.indices
     // la diagonal del quad se elige según la oclusión para que no salga el "parche" en las esquinas
@@ -265,6 +299,7 @@ class GeometryBuilder {
       if ((this.verts + 4) * 3 > this.pos.length) this.grow()
       const start = this.verts
       const lf = lightFactor(light) * f.shade
+      const bf = blockFactor(light)
       const t1 = f.tangents[0]
       const t2 = f.tangents[1]
       for (let i = 0; i < 4; i++) {
@@ -285,9 +320,11 @@ class GeometryBuilder {
         this.norm[p + 2] = f.dir[2]
         this.uv[(start + i) * 2] = u0 + (u1 - u0) * su
         this.uv[(start + i) * 2 + 1] = v0 + (v1 - v0) * sv
-        this.col[p] = lf
-        this.col[p + 1] = lf
-        this.col[p + 2] = lf
+        const q = (start + i) * 4
+        this.col[q] = lf
+        this.col[q + 1] = lf
+        this.col[q + 2] = lf
+        this.col[q + 3] = bf
       }
       const k = this.indices
       this.idx[k] = start; this.idx[k + 1] = start + 1; this.idx[k + 2] = start + 2
@@ -313,13 +350,15 @@ class GeometryBuilder {
         const us = [u0, u1, u1, u0]
         const vs = [v0, v0, v0 + (v1 - v0) * height, v0 + (v1 - v0) * height]
         const lf = lightFactor(light) * 0.9
+        const bf = blockFactor(light)
         for (let i = 0; i < 4; i++) {
           const c = corners[i]
           const p = (start + i) * 3
+          const q = (start + i) * 4
           this.pos[p] = x + c[0]; this.pos[p + 1] = y + c[1]; this.pos[p + 2] = z + c[2]
           this.norm[p] = 0; this.norm[p + 1] = 1; this.norm[p + 2] = 0
           this.uv[(start + i) * 2] = us[i]; this.uv[(start + i) * 2 + 1] = vs[i]
-          this.col[p] = lf; this.col[p + 1] = lf; this.col[p + 2] = lf
+          this.col[q] = lf; this.col[q + 1] = lf; this.col[q + 2] = lf; this.col[q + 3] = bf
         }
         const k = this.indices
         this.idx[k] = start; this.idx[k + 1] = start + 1; this.idx[k + 2] = start + 2
@@ -335,7 +374,7 @@ class GeometryBuilder {
       pos: this.pos.slice(0, this.verts * 3),
       norm: this.norm.slice(0, this.verts * 3),
       uv: this.uv.slice(0, this.verts * 2),
-      col: this.col.slice(0, this.verts * 3),
+      col: this.col.slice(0, this.verts * 4),
       idx: this.idx.slice(0, this.indices),
     }
   }
@@ -440,7 +479,7 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
             // entre dos aguas no hay caras: la pendiente ya las une
             if (nLiquid && f.dir[1] !== -1) continue
             if (f.dir[1] === -1 && n !== Block.AIR) continue
-            const light = f.dir[1] === 1 ? field.light(x, y + 1, z) : Math.max(field.light(x, y, z), field.light(x + f.dir[0], y + f.dir[1], z + f.dir[2]))
+            const light = f.dir[1] === 1 ? field.light(x, y + 1, z) : packMax(field.light(x, y, z), field.light(x + f.dir[0], y + f.dir[1], z + f.dir[2]))
             water.quad(x, y, z, f, uvFor(block, f.face), NO_AO, light, height, 0, topFor(f))
           }
           continue
@@ -477,7 +516,7 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
           for (const f of FACES) {
             const n = field.block(x + f.dir[0], y + f.dir[1], z + f.dir[2])
             if (n === UNKNOWN || isOpaque(n)) continue
-            const light = def.glow ? 15 : lightFace(f)
+            const light = def.glow ? pack(lightFace(f) & 15, 15) : lightFace(f)
             opaque.quad(x, y, z, f, faceUV(f), aoFor(x, y, z, f), light)
           }
           continue
@@ -485,7 +524,7 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
 
         // ---- formas parciales: se dibujan enteras salvo la cara pegada a un opaco
         const target = def.cutout ? cutout : opaque
-        const lit = def.glow ? 15 : Math.max(lightHere, ...FACES.map(lightFace))
+        const lit = def.glow ? pack(15, 15) : FACES.map(lightFace).reduce(packMax, lightHere)
         type B6 = [number, number, number, number, number, number]
 
         if (def.shape === 'slab') {
@@ -600,7 +639,7 @@ export function buildBlockMesh(uv: UVTable, block: number): MeshBuffers {
         const fd = FRONT_DIRS[rot]
         if (f.dir[0] === fd[0] && f.dir[2] === fd[2]) tex = uv[def.front] ?? tex
       }
-      b.quad(-0.5, -0.5, -0.5, f, tex, NO_AO, 15)
+      b.quad(-0.5, -0.5, -0.5, f, tex, NO_AO, pack(15, 15))
     }
     return b.finish()
   }
@@ -617,7 +656,7 @@ export function buildBlockMesh(uv: UVTable, block: number): MeshBuffers {
   // juntar opaco + recorte + follaje en un buffer y centrar
   const parts = [m.opaque, m.cutout, m.foliage]
   const verts = parts.reduce((n, p) => n + p.pos.length / 3, 0)
-  const out: MeshBuffers = { pos: new Float32Array(verts * 3), norm: new Float32Array(verts * 3), uv: new Float32Array(verts * 2), col: new Float32Array(verts * 3), idx: new Uint32Array(parts.reduce((n, p) => n + p.idx.length, 0)) }
+  const out: MeshBuffers = { pos: new Float32Array(verts * 3), norm: new Float32Array(verts * 3), uv: new Float32Array(verts * 2), col: new Float32Array(verts * 4), idx: new Uint32Array(parts.reduce((n, p) => n + p.idx.length, 0)) }
   let v = 0
   let i = 0
   for (const p of parts) {
@@ -628,7 +667,7 @@ export function buildBlockMesh(uv: UVTable, block: number): MeshBuffers {
     }
     out.norm.set(p.norm, v * 3)
     out.uv.set(p.uv, v * 2)
-    out.col.set(p.col, v * 3)
+    out.col.set(p.col, v * 4)
     for (let k = 0; k < p.idx.length; k++) out.idx[i + k] = p.idx[k] + v
     v += p.pos.length / 3
     i += p.idx.length

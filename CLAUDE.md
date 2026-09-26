@@ -23,6 +23,7 @@ sin librerías de motor. Este archivo es el **índice**; el detalle vive en
 | UI estilo Minecraft: pausa, inventario por categorías con iconos 3D, hotbar, skins, mundo (semilla, distancia, sombras, día/noche), F3 | ✅ |
 | Guardado en `localStorage` por semilla: ediciones por chunk, jugador, hotbar, ajustes · **Exportar / Importar** `.threecraft` desde «Cargar mundos» | ✅ |
 | **Mundo de serie** «Castillo de Aldrich» (`public/worlds/aldrich.threecraft`): el **Castle Lividus of Aeritus** de KyleCRat (CC BY-NC-SA 3.0, crédito en pausa y README) con ALDRICH en oro encima · se instala y abre solo la primera vez · se genera con `npx tsx scripts/build-castle.ts` desde `scripts/castle/lividus.json.gz` | ✅ |
+| **Luz de bloque**: antorchas, linternas y piedra luminosa iluminan (inundación en el mesher, cálida, visible de noche y frenada por lo opaco: eso son sus sombras) · viaja en el atributo `blockLight` y la suma `blockLight.ts` | ✅ |
 | Ediciones de chunk en **base64** (`encodeEdits`, ~5 caracteres por bloque): el castillo son 250 000 ediciones y en JSON no cabían en los ~5 MB de localStorage · `.threecraft` v2, el v1 se sigue leyendo | ✅ |
 | Multijugador, mobs, crafteo, redstone | ✗ no hay |
 
@@ -59,6 +60,7 @@ src/game/
   godrays.ts       los rayos de sol (dos pasadas a ¼ de resolución)
   waterMaterial.ts el shader del agua
   splash.ts        gotas al entrar al agua
+  blockLight.ts    el Lambert de los chunks con la luz de antorchas sumada (atributo `blockLight`)
   audio.ts         sonidos (Kenney CC0): familias por material, pool de 12 fuentes
   fallingBlocks.ts arena/grava que caen como entidad y se recolocan
   liquids.ts       el agua por niveles, en pasos de 0.25 s, sólo celdas tocadas
