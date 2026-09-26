@@ -23,9 +23,9 @@ const AIR_SPEED = 4.5
 const AIR_RUN_SPEED = 5.4
 const CROUCH_SPEED = 1.6
 const SWIM_SPEED = 3
-// volar va como andar, y con correr como correr: 11 (y 22) era lanzarse por el mapa
+// volar va como andar; con Shift sí se lanza por el mapa (Luis lo quiere «super rápido»)
 const FLY_SPEED = WALK_SPEED
-const FLY_RUN_SPEED = RUN_SPEED
+const FLY_RUN_SPEED = 22
 
 const GROUND_ACCEL = 18
 const GROUND_DECEL = 24

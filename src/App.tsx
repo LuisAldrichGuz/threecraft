@@ -19,20 +19,34 @@ const BIOME_NAMES: Record<string, string> = {
   birch_forest: 'Abedules', desert: 'Desierto', snowy: 'Tundra', mountains: 'Montañas', savanna: 'Sabana',
 }
 
-const CONTROLS: [string, string][] = [
-  ['W A S D', 'Moverse'],
-  ['Espacio', 'Saltar · doble toque: volar'],
-  ['Shift', 'Correr'],
-  ['Ctrl / C', 'Agacharse'],
-  ['Clic izq.', 'Romper (mantén)'],
-  ['Clic der.', 'Poner'],
-  ['Clic medio', 'Copiar el bloque'],
-  ['Rueda · 1-9', 'Hotbar'],
-  ['E', 'Inventario'],
-  ['Q', 'Tirar lo que llevas'],
-  ['V', 'Tercera persona'],
-  ['F3', 'Información'],
-  ['Esc', 'Pausa'],
+/** grupo → [teclas, qué hace]; las teclas separadas por `+` salen como cápsulas sueltas */
+const CONTROLS: [string, [string, string][]][] = [
+  ['Moverse', [
+    ['W+A+S+D', 'Moverse'],
+    ['Espacio', 'Saltar'],
+    ['Shift', 'Correr'],
+    ['Ctrl+C', 'Agacharse'],
+  ]],
+  ['Volar', [
+    ['Espacio+Espacio', 'Dos toques: volar y dejar de volar'],
+    ['Espacio', 'Subir'],
+    ['Ctrl+C', 'Bajar'],
+    ['Shift', 'Volar rápido'],
+  ]],
+  ['Bloques', [
+    ['Clic izq.', 'Romper (mantén)'],
+    ['Clic der.', 'Poner · abrir puertas y cofres'],
+    ['Clic medio', 'Copiar el bloque que miras'],
+    ['Rueda+1-9', 'Elegir en la hotbar'],
+    ['E', 'Inventario'],
+    ['Q', 'Tirar lo que llevas'],
+  ]],
+  ['Cámara y menú', [
+    ['V+F5', 'Cámara: primera, tercera y de frente'],
+    ['F3', 'Información'],
+    ['Esc', 'Pausa'],
+    ['Clic', 'Volver al juego'],
+  ]],
 ]
 
 const EMPTY_HUD: Hud = {
@@ -532,10 +546,19 @@ function App() {
               <div className="tab-anim">
                 <div className="mc-heading light">Controles</div>
                 <div className="controls">
-                  {CONTROLS.map(([k, v]) => (
-                    <div key={k} className="control">
-                      <span className="key">{k}</span>
-                      <span>{v}</span>
+                  {CONTROLS.map(([group, rows]) => (
+                    <div key={group} className="control-group">
+                      <div className="control-title">{group}</div>
+                      {rows.map(([k, v]) => (
+                        <div key={group + k} className="control">
+                          <span className="keys">
+                            {k.split('+').map((key, i) => (
+                              <span key={i} className="key">{key}</span>
+                            ))}
+                          </span>
+                          <span>{v}</span>
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>

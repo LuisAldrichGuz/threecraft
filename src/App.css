@@ -217,7 +217,7 @@ button { font-family: var(--font); }
 .skin3d-wrap canvas { display: block; }
 .skins-layout { display: flex; gap: 14px; align-items: stretch; width: 100%; }
 .skins-layout .skins { flex: 1; max-height: 340px; align-content: start; }
-.pause:has(.skins-tab) { width: min(780px, 100%); }
+.pause:has(.skins-tab), .pause:has(.controls) { width: min(780px, 100%); }
 @media (max-width: 640px) {
   .skins-layout { flex-direction: column; align-items: center; }
   .skin3d-wrap { height: 260px; }
@@ -235,11 +235,15 @@ button { font-family: var(--font); }
 .face-layer { position: absolute; inset: 0; image-rendering: pixelated; background-repeat: no-repeat; }
 
 /* controles */
-.controls { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
-.control { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-dark); }
+.controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; width: min(100%, 720px); }
+.control-group { display: flex; flex-direction: column; gap: 5px; }
+.control-title { font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #ffd873; text-shadow: 2px 2px 0 var(--shadow); margin-bottom: 2px; }
+.control { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); text-shadow: 2px 2px 0 var(--shadow); }
+.keys { display: flex; gap: 4px; flex-shrink: 0; }
+/* cápsulas flotantes: teclado de verdad, con su sombra dura debajo */
 .key {
-  min-width: 78px; padding: 4px 6px; text-align: center; font-size: 13px; color: #fff; text-shadow: 1px 1px 0 #3f3f3f;
-  background: var(--btn); border: 2px solid #000; box-shadow: inset 2px 2px 0 var(--btn-light), inset -2px -2px 0 var(--btn-dark);
+  min-width: 30px; padding: 3px 7px; text-align: center; font-size: 12px; color: #fff; text-shadow: 1px 1px 0 #3f3f3f;
+  background: var(--btn); border: 2px solid #000; border-bottom-width: 4px; box-shadow: inset 2px 2px 0 var(--btn-light), 0 3px 0 rgba(0, 0, 0, 0.45);
 }
 
 @media (max-width: 600px) {
