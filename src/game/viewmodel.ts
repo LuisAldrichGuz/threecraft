@@ -13,13 +13,14 @@ import { loadSkin, makeBox } from './playerModel'
  * al romper o poner.
  */
 const BLOCK_POS = new THREE.Vector3(0.56, -0.52, -0.72)
-const ARM_POS = new THREE.Vector3(0.8, -0.89, -0.78)
-// hacia dónde apunta la mano desde el hombro (arriba-izquierda y un poco hacia la cámara),
-// y un giro sobre ese eje para que se vea el dorso de la mano, no el codo
-const ARM_DIR = new THREE.Vector3(-0.5, 0.85, 0.1).normalize()
+const ARM_POS = new THREE.Vector3(0.86, -0.92, -0.5)
+// hacia dónde apunta la mano desde el hombro: arriba-izquierda y **hacia dentro de la
+// pantalla** (como en Minecraft se ve el brazo en escorzo, con la mano al fondo y el
+// hombro cerca, fuera del cuadro), y un giro sobre ese eje para ver el dorso de la mano
+const ARM_DIR = new THREE.Vector3(-0.45, 0.55, -0.7).normalize()
 const ARM_QUAT = new THREE.Quaternion()
   .setFromUnitVectors(new THREE.Vector3(0, -1, 0), ARM_DIR)
-  .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, -1, 0), -0.6))
+  .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, -1, 0), -0.4))
 
 export class Viewmodel {
   group = new THREE.Group()
@@ -45,7 +46,7 @@ export class Viewmodel {
     inner.position.y = -0.375
     outer.position.y = -0.375
     this.arm.add(inner, outer)
-    this.arm.scale.setScalar(1.0)
+    this.arm.scale.setScalar(1.15)
     this.arm.quaternion.copy(ARM_QUAT)
     this.group.add(this.arm)
 
