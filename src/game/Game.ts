@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { Block, BLOCKS, blockDef } from './blocks'
+import { Block, BLOCKS, blockDef, base, rotOf, stateOf, withRot, withState } from './blocks'
 import { CHUNK_SIZE, chunkKey } from './constants'
 import { World } from './world'
 import { buildAtlas, type Atlas } from './atlas'
@@ -11,14 +11,26 @@ import { buildBlockMesh } from './mesher'
 import { Sky } from './sky'
 import { GodRays, SKY_LAYER } from './godrays'
 import { WaterMaterial } from './waterMaterial'
+import { FoliageMaterial } from './foliageMaterial'
+import { chunkMaterial } from './blockLight'
 import { Splash } from './splash'
 import { GameAudio } from './audio'
 import { FallingBlocks } from './fallingBlocks'
 import { Liquids } from './liquids'
+import { BlockParticles } from './particles'
+import { Viewmodel } from './viewmodel'
+import { ItemEntities } from './items'
+import { Music, type Track } from './music'
 import { raycastVoxel } from './raycast'
 import { renderBlockIcons } from './icons'
-import { loadPlayer, loadSettings, savePlayer, saveSettings, type Settings } from './storage'
+import { loadPlayer, loadSettings, savePlayer, saveSettings, touchWorld, guessQuality, QUALITY_PRESETS, type Quality, type Settings } from './storage'
+import { PostFX } from './postfx'
 import type { Biome } from './generator'
+
+/** ¿hay algo sólido debajo para apoyar flores, antorchas, puertas...? */
+function isSolidBelow(world: World, x: number, y: number, z: number): boolean {
+  return world.isSolidAt(x, y - 1, z)
+}
 
 export interface Hud {
   locked: boolean
@@ -38,13 +50,32 @@ export interface Hud {
   skin: string
   seed: number
   shadows: boolean
+  renderRadius: number
+  timeFlowing: boolean
+  quality: Quality
+  /** el preset que de verdad está aplicado (con 'auto', el que se eligió) */
+  effective: Quality
+  ssao: boolean
+  bloom: boolean
+  vignette: boolean
+  godRays: boolean
+  resolution: number
+  gpu: string
+  music: boolean
+  musicVolume: number
+  /** la canción que suena ahora, o null */
+  track: Track | null
   loading: number
+  /** 0..1: cuánto del suelo de arranque (3×3 chunks) ya está mallado */
+  spawnProgress: number
   time: number
 }
 
 export interface GameCallbacks {
   onHud: (hud: Hud) => void
   onInventory: (open: boolean) => void
+  /** qué mundo abrir (viene de la pantalla de inicio); si falta, usa el último guardado */
+  seed?: number
 }
 
 const REACH = 5
@@ -52,42 +83,22 @@ const REACH = 5
 const FOV_FIRST = 100
 const FOV_THIRD = 65
 const SENSITIVITY = 0.0022
-const PITCH_UP = (87 * Math.PI) / 180
-const PITCH_DOWN = (51.4 * Math.PI) / 180
 /** lo que tarda la cámara de tercera persona en alcanzar su sitio (constante de tiempo) */
 const CAMERA_SMOOTH = 0.09
+/** radio (en chunks) que se genera a toda máquina; más allá se va soltando poco a poco */
+const NEAR_CHUNKS = 5
 const DEFAULT_HOTBAR = [Block.GRASS, Block.DIRT, Block.STONE, Block.COBBLESTONE, Block.OAK_PLANKS, Block.OAK_LOG, Block.OAK_LEAVES, Block.GLASS, Block.GLOWSTONE]
 
-/** las grietas al romper: diez etapas dibujadas a mano en un canvas */
-function makeCrackTextures(): THREE.Texture[] {
-  const out: THREE.Texture[] = []
-  for (let stage = 0; stage < 10; stage++) {
-    const c = document.createElement('canvas')
-    c.width = 16
-    c.height = 16
-    const ctx = c.getContext('2d')!
-    ctx.fillStyle = 'rgba(0,0,0,0.85)'
-    let seed = 7 + stage
-    const rnd = () => {
-      seed = (seed * 16807) % 2147483647
-      return seed / 2147483647
-    }
-    for (let i = 0; i < 3 + stage * 2; i++) {
-      let x = Math.floor(rnd() * 16)
-      let y = Math.floor(rnd() * 16)
-      const len = 3 + Math.floor(rnd() * (4 + stage))
-      for (let k = 0; k < len; k++) {
-        ctx.fillRect(x, y, 1, 1)
-        x = Math.max(0, Math.min(15, x + Math.floor(rnd() * 3) - 1))
-        y = Math.max(0, Math.min(15, y + Math.floor(rnd() * 3) - 1))
-      }
-    }
-    const t = new THREE.CanvasTexture(c)
+/** las grietas al romper: las diez etapas `destroy_stage_N` del pack, sobre el bloque */
+function loadCrackTextures(): THREE.Texture[] {
+  const loader = new THREE.TextureLoader()
+  return Array.from({ length: 10 }, (_, i) => {
+    const t = loader.load(`/textures/destroy_stage_${i}.png`)
     t.magFilter = THREE.NearestFilter
     t.minFilter = THREE.NearestFilter
-    out.push(t)
-  }
-  return out
+    t.colorSpace = THREE.SRGBColorSpace
+    return t
+  })
 }
 
 interface ChunkState {
@@ -102,6 +113,9 @@ export class Game {
   private renderer: THREE.WebGLRenderer
   private scene = new THREE.Scene()
   private camera: THREE.PerspectiveCamera
+  private handScene = new THREE.Scene()
+  private handCamera: THREE.PerspectiveCamera
+  private viewmodel!: Viewmodel
   private world: World
   private player: Player
   private sky!: Sky
@@ -119,12 +133,18 @@ export class Game {
   private chunks = new Map<string, ChunkState>()
   private wanted: [number, number][] = []
   private playerChunk = { cx: NaN, cz: NaN }
-  private materials!: { opaque: THREE.Material; cutout: THREE.Material; water: WaterMaterial }
+  /** no se destapa la pantalla de carga hasta tener suelo bajo los pies */
+  private spawnedReady = false
+  private lastFarGenerate = 0
+  private materials!: { opaque: THREE.Material; cutout: THREE.Material; foliage: FoliageMaterial; water: WaterMaterial }
   private clock = 0
   private splash = new Splash()
   private audio!: GameAudio
   private falling!: FallingBlocks
   private liquids!: Liquids
+  private particles!: BlockParticles
+  private items!: ItemEntities
+  private music!: Music
   private stepDistance = 0
   private hitTimer = 0
   private lastPos = new THREE.Vector3()
@@ -138,12 +158,16 @@ export class Game {
   /** 0 primera persona · 1 tercera por detrás · 2 tercera de frente (F5 los recorre) */
   private cameraMode = 0
   private godRays: GodRays
+  private postfx!: PostFX
+  private gpu = ''
+  private effective: Quality = 'media'
+  private adaptTimer = 0
   private cameraGoal = new THREE.Vector3()
   private cameraReady = false
 
   private outline: THREE.LineSegments
   private crack: THREE.Mesh
-  private crackTextures = makeCrackTextures()
+  private crackTextures = loadCrackTextures()
   private breaking: { x: number; y: number; z: number; progress: number } | null = null
   private placeCooldown = 0
   private swingT = 1
@@ -164,21 +188,36 @@ export class Game {
     this.canvas = canvas
     this.callbacks = callbacks
     this.settings = loadSettings()
+    if (callbacks.seed !== undefined) this.settings.seed = callbacks.seed
+    saveSettings(this.settings)
+    touchWorld(this.settings.seed)
     this.cameraMode = this.settings.thirdPerson ? 1 : 0
     ;(window as unknown as { __game: Game }).__game = this
 
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' })
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+    // preserveDrawingBuffer: para poder sacar la miniatura del mundo con toDataURL al salir
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: true })
+    // con 'auto' el preset sale del hardware; con uno fijo, lo que diga la configuración
+    const dbg = this.renderer.getContext().getExtension('WEBGL_debug_renderer_info')
+    this.gpu = dbg ? String(this.renderer.getContext().getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : ''
+    this.effective = this.settings.quality === 'auto' ? guessQuality(this.gpu) : this.settings.quality
+    if (this.settings.quality === 'auto') Object.assign(this.settings, QUALITY_PRESETS[this.effective])
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio * this.settings.resolution, 2))
     this.renderer.setSize(window.innerWidth, window.innerHeight)
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
     if (this.settings.shadows) {
       this.renderer.shadowMap.enabled = true
-      this.renderer.shadowMap.type = THREE.PCFShadowMap
+      this.renderer.shadowMap.type = THREE.BasicShadowMap
     }
 
-    this.camera = new THREE.PerspectiveCamera(FOV_FIRST, window.innerWidth / window.innerHeight, 0.05, 700)
+    // el plano lejano tiene que cubrir lo que pida la distancia de render, si no los chunks de más
+    // allá se recortan sin avisar (con 64 chunks el mundo entero desaparecía por esto)
+    const far = Math.max(700, this.settings.renderRadius * CHUNK_SIZE * 1.2)
+    this.camera = new THREE.PerspectiveCamera(FOV_FIRST, window.innerWidth / window.innerHeight, 0.05, far)
     this.camera.layers.enable(SKY_LAYER)
+    this.handCamera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 10)
     this.godRays = new GodRays(window.innerWidth, window.innerHeight)
+    this.postfx = new PostFX(this.renderer, this.scene, this.camera, window.innerWidth, window.innerHeight)
+    this.applyFx()
     this.scene.fog = new THREE.Fog(0x87c8f0, 60, 200)
 
     this.world = new World(this.settings.seed)
@@ -204,7 +243,8 @@ export class Game {
     if (saved?.flying) this.player.flying = true
 
     const edges = new THREE.EdgesGeometry(new THREE.BoxGeometry(1.004, 1.004, 1.004))
-    this.outline = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.6 }))
+    // contorno negro fino que respeta la profundidad: sólo se ven las aristas de las caras visibles, como en Minecraft
+    this.outline = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xd8d8d8, transparent: true, opacity: 0.9 }))
     this.outline.visible = false
     this.scene.add(this.outline)
 
@@ -234,13 +274,35 @@ export class Game {
     this.icons = renderBlockIcons(this.atlas)
     this.pool = new WorkerPool(this.settings.seed, this.atlas.uvTable)
     this.materials = {
-      opaque: new THREE.MeshLambertMaterial({ map: this.atlas.texture, vertexColors: true }),
-      cutout: new THREE.MeshLambertMaterial({ map: this.atlas.texture, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide }),
+      opaque: chunkMaterial(this.atlas.texture),
+      cutout: chunkMaterial(this.atlas.texture, { alphaTest: 0.5, side: THREE.DoubleSide }),
+      foliage: new FoliageMaterial(this.atlas.texture),
       water: new WaterMaterial(this.atlas.texture),
     }
+    this.heldMaterial = new THREE.MeshLambertMaterial({ map: this.atlas.texture, vertexColors: true })
 
     this.sky = new Sky(this.scene, this.settings.shadows, this.settings.seed)
+    // la hora guardada con el mundo manda sobre el ajuste global
+    const savedTime = loadPlayer(this.settings.seed)
+    if (savedTime?.time !== undefined) this.sky.time = savedTime.time
+    if (savedTime?.timeFlowing !== undefined) this.settings.timeFlowing = savedTime.timeFlowing
+    this.sky.frozen = !this.settings.timeFlowing
     this.audio = new GameAudio(this.camera)
+    this.music = new Music(this.audio.listener)
+    this.music.setVolume(this.settings.musicVolume)
+    this.music.setEnabled(this.settings.music)
+    this.music.onTrack = () => this.pushHud()
+    this.items = new ItemEntities(this.scene, this.world, this.atlas, this.heldMaterial)
+    this.items.onPickup = (block) => {
+      // vuelve a la casilla activa si está vacía, si no a la primera libre
+      const i = this.hotbar[this.slot] === Block.AIR ? this.slot : this.hotbar.indexOf(Block.AIR)
+      if (i < 0) return false
+      this.setHotbar(i, block)
+      this.audio.ui('select')
+      return true
+    }
+    this.particles = new BlockParticles(this.atlas)
+    this.scene.add(this.particles.points)
     this.liquids = new Liquids(this.world)
     this.liquids.onChange = (x, _y, z) => this.markDirtyAround(x, z)
     this.falling = new FallingBlocks(this.scene, this.world, this.atlas, this.heldMaterial)
@@ -252,14 +314,15 @@ export class Game {
         this.afterBlockChange(x, y, z)
       }
     }
-    this.heldMaterial = new THREE.MeshLambertMaterial({ map: this.atlas.texture, vertexColors: true })
+    this.viewmodel = new Viewmodel(this.atlas)
+    this.handScene.add(this.viewmodel.group)
     this.model = new PlayerModel()
     this.model.root.traverse((o) => {
       if (o instanceof THREE.Mesh) o.castShadow = true
     })
     this.scene.add(this.model.root)
     this.scene.add(this.splash.points)
-    await this.model.setSkin(this.settings.skin)
+    await Promise.all([this.model.setSkin(this.settings.skin), this.viewmodel.setSkin(this.settings.skin)])
     this.updateHeld()
 
     this.updateWanted(true)
@@ -316,11 +379,20 @@ export class Game {
   /** reparte trabajo a los workers: primero generar lo más cercano, luego mallar lo que ya está */
   private pumpChunks() {
     const maxJobs = 6
+    const now = performance.now()
     for (const [cx, cz] of this.wanted) {
       if (this.pool.busy >= maxJobs) break
       const key = chunkKey(cx, cz)
       const state = this.stateOf(key)
       if (this.world.hasChunk(cx, cz) || state.generating) continue
+      // los 5 chunks de encima se generan sin freno; más allá, uno a la vez y cada vez más
+      // espaciado — así una distancia de render enorme no se traga toda la CPU de golpe
+      const dist = Math.max(Math.abs(cx - this.playerChunk.cx), Math.abs(cz - this.playerChunk.cz))
+      if (dist > NEAR_CHUNKS) {
+        const gap = 60 + (dist - NEAR_CHUNKS) * 25
+        if (now - this.lastFarGenerate < gap) continue
+        this.lastFarGenerate = now
+      }
       state.generating = true
       this.pool.generate(cx, cz).then((blocks) => {
         const s = this.chunks.get(key)
@@ -351,17 +423,37 @@ export class Game {
         const group = new THREE.Group()
         const opaque = new THREE.Mesh(buffersToGeometry(mesh.opaque), this.materials.opaque)
         const cutout = new THREE.Mesh(buffersToGeometry(mesh.cutout), this.materials.cutout)
+        const foliage = new THREE.Mesh(buffersToGeometry(mesh.foliage), this.materials.foliage)
+        foliage.castShadow = foliage.receiveShadow = true
+        foliage.renderOrder = 1
         const water = new THREE.Mesh(buffersToGeometry(mesh.water), this.materials.water)
         opaque.castShadow = opaque.receiveShadow = true
         cutout.castShadow = cutout.receiveShadow = true
         water.receiveShadow = true
         water.renderOrder = 2
         cutout.renderOrder = 1
-        group.add(opaque, cutout, water)
+        group.add(opaque, cutout, foliage, water)
         this.scene.add(group)
         s.group = group
+        if (!this.spawnedReady) {
+          this.checkSpawnReady()
+          this.pushHud() // que el % de carga avance al toque, no cada 0.2s
+        }
       })
     }
+  }
+
+  /** 3×3 chunks mallados alrededor del jugador: ya hay piso y paisaje, se puede destapar */
+  private checkSpawnReady() {
+    if (this.spawnedReady) return
+    const { cx, cz } = this.playerChunk
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dz = -1; dz <= 1; dz++) {
+        const s = this.chunks.get(chunkKey(cx + dx, cz + dz))
+        if (!s || !s.meshed) return
+      }
+    }
+    this.spawnedReady = true
   }
 
   /** algo cambió en (x, y, z): los vecinos reaccionan (arena que cae, y más adelante el agua) */
@@ -371,7 +463,8 @@ export class Game {
     this.liquids.touch(x, y, z)
   }
 
-  private markDirtyAround(x: number, z: number) {
+  /** `wide`: la luz de una antorcha llega a 14 bloques, así que se remallan los 8 chunks de alrededor */
+  private markDirtyAround(x: number, z: number, wide = false) {
     const cx = Math.floor(x / CHUNK_SIZE)
     const cz = Math.floor(z / CHUNK_SIZE)
     const lx = x - cx * CHUNK_SIZE
@@ -381,6 +474,10 @@ export class Game {
       if (s) s.dirty = true
     }
     mark(cx, cz)
+    if (wide) {
+      for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) mark(cx + dx, cz + dz)
+      return
+    }
     if (lx <= 1) mark(cx - 1, cz)
     if (lx >= CHUNK_SIZE - 2) mark(cx + 1, cz)
     if (lz <= 1) mark(cx, cz - 1)
@@ -393,6 +490,9 @@ export class Game {
     this.camera.updateProjectionMatrix()
     this.renderer.setSize(window.innerWidth, window.innerHeight)
     this.godRays.resize(window.innerWidth, window.innerHeight)
+    this.postfx.resize(window.innerWidth, window.innerHeight)
+    this.handCamera.aspect = this.camera.aspect
+    this.handCamera.updateProjectionMatrix()
   }
 
   private onKeyDown = (e: KeyboardEvent) => {
@@ -406,9 +506,13 @@ export class Game {
       e.preventDefault()
       this.toggleInventory()
     }
-    if (e.code === 'Escape' && this.inventoryOpen) {
-      this.inventoryOpen = false
-      this.callbacks.onInventory(false)
+    if (e.code === 'Escape') {
+      if (this.inventoryOpen) {
+        this.inventoryOpen = false
+        this.callbacks.onInventory(false)
+      }
+      // en pausa, Esc NO reanuda: se vuelve con el clic o el botón, que es
+      // lo que devuelve el puntero (Luis: «siempre con el click»)
     }
     if (e.code === 'KeyV' || e.code === 'F5') {
       e.preventDefault()
@@ -423,6 +527,7 @@ export class Game {
       this.pushHud()
     }
     if (e.code === 'Space' && this.locked) this.player.tapJump(performance.now() / 1000)
+    if (e.code === 'KeyQ' && this.locked) this.dropHeld()
   }
 
   private onKeyUp = (e: KeyboardEvent) => {
@@ -434,8 +539,8 @@ export class Game {
     this.yaw -= e.movementX * SENSITIVITY
     this.pitch -= e.movementY * SENSITIVITY
     // arriba se mira lejos (87°); abajo con este fov los pies ya caben a 51°
-    const down = this.cameraMode === 0 ? PITCH_DOWN : Math.PI / 2 - 0.05
-    this.pitch = Math.max(-down, Math.min(PITCH_UP, this.pitch))
+    const limit = Math.PI / 2 - 0.001
+    this.pitch = Math.max(-limit, Math.min(limit, this.pitch))
   }
 
   private onPointerLockChange = () => {
@@ -460,7 +565,7 @@ export class Game {
       const hit = this.target()
       if (hit) {
         const b = this.world.getBlock(hit.block.x, hit.block.y, hit.block.z)
-        if (!blockDef(b).hidden) this.setHotbar(this.slot, b)
+        if (!blockDef(b).hidden) this.setHotbar(this.slot, base(b))
       }
     }
   }
@@ -485,6 +590,7 @@ export class Game {
     this.callbacks.onInventory(false)
     this.audio?.resume()
     this.audio?.ui('click')
+    this.music?.start()
     this.canvas.requestPointerLock()
   }
 
@@ -507,6 +613,7 @@ export class Game {
     const block = this.hotbar[this.slot]
     if (block === this.heldBlock || !this.model) return
     this.heldBlock = block
+    this.viewmodel?.setBlock(block)
     this.model.setHeld(block === Block.AIR ? null : buffersToGeometry(buildBlockMesh(this.atlas.uvTable, block)), this.heldMaterial)
   }
 
@@ -531,14 +638,88 @@ export class Game {
   async setSkin(id: string) {
     this.settings.skin = id
     saveSettings(this.settings)
-    await this.model.setSkin(id)
+    await Promise.all([this.model.setSkin(id), this.viewmodel.setSkin(id)])
     this.pushHud()
   }
 
   setRenderRadius(r: number) {
     this.settings.renderRadius = r
     saveSettings(this.settings)
+    this.camera.far = Math.max(700, r * CHUNK_SIZE * 1.2)
+    this.camera.updateProjectionMatrix()
     this.updateWanted(true)
+    this.pushHud()
+  }
+
+  private applyFx() {
+    this.postfx.set({ ssao: this.settings.ssao, bloom: this.settings.bloom, vignette: this.settings.vignette })
+  }
+
+  /** Q: tira lo que llevas en la mano, como en Minecraft; la casilla queda vacía */
+  dropHeld() {
+    const block = this.hotbar[this.slot]
+    if (block === Block.AIR) return
+    const dir = new THREE.Vector3()
+    this.camera.getWorldDirection(dir)
+    const from = this.player.eye.addScaledVector(dir, 0.4)
+    this.items.drop(block, from, dir)
+    this.setHotbar(this.slot, Block.AIR)
+    this.swingT = 0
+    this.viewmodel.swing()
+    this.audio.ui('click')
+  }
+
+  /** un preset entero; 'auto' vuelve a adivinar por el hardware */
+  setQuality(q: Quality) {
+    this.settings.quality = q
+    this.effective = q === 'auto' ? guessQuality(this.gpu) : q
+    const preset = QUALITY_PRESETS[this.effective]
+    const needsReload = preset.shadows !== undefined && preset.shadows !== this.settings.shadows
+    Object.assign(this.settings, preset)
+    saveSettings(this.settings)
+    if (needsReload) {
+      location.reload()
+      return
+    }
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio * this.settings.resolution, 2))
+    this.applyFx()
+    this.updateWanted(true)
+    this.pushHud()
+  }
+
+  /** un efecto suelto; deja el preset en manual */
+  setEffect(key: 'ssao' | 'bloom' | 'vignette' | 'godRays', on: boolean) {
+    this.settings[key] = on
+    this.settings.quality = this.effective
+    saveSettings(this.settings)
+    this.applyFx()
+    this.pushHud()
+  }
+
+  setMusic(on: boolean) {
+    this.settings.music = on
+    saveSettings(this.settings)
+    this.music.setEnabled(on)
+    if (on) this.music.skip()
+    this.pushHud()
+  }
+
+  setMusicVolume(v: number) {
+    this.settings.musicVolume = v
+    saveSettings(this.settings)
+    this.music.setVolume(v)
+    this.pushHud()
+  }
+
+  skipTrack() {
+    this.music.skip()
+  }
+
+  setResolution(r: number) {
+    this.settings.resolution = r
+    this.settings.quality = this.effective
+    saveSettings(this.settings)
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio * r, 2))
     this.pushHud()
   }
 
@@ -551,16 +732,31 @@ export class Game {
 
   setTime(t: number) {
     if (this.sky) this.sky.time = t
+    this.pushHud()
   }
 
-  newWorld(seed: number) {
-    this.settings.seed = seed
+  setTimeFlowing(on: boolean) {
+    this.settings.timeFlowing = on
     saveSettings(this.settings)
-    location.reload()
+    if (this.sky) this.sky.frozen = !on
+    this.pushHud()
   }
 
   get seed() {
     return this.settings.seed
+  }
+
+  /** miniatura del mundo para la lista de "Cargar mundos": una copia chica del último frame dibujado */
+  snapshot(width = 640): string {
+    const height = Math.round((width / this.canvas.width) * this.canvas.height)
+    const out = document.createElement('canvas')
+    out.width = width
+    out.height = height
+    const ctx = out.getContext('2d')!
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(this.canvas, 0, 0, width, height)
+    return out.toDataURL('image/jpeg', 0.85)
   }
 
   // -------------------------------------------------------------- juego --
@@ -582,7 +778,10 @@ export class Game {
     if (this.mouse.left && hit) {
       const b = this.world.getBlock(hit.block.x, hit.block.y, hit.block.z)
       const def = blockDef(b)
-      if (this.swingT >= 1) this.swingT = 0
+      if (this.swingT >= 1) {
+        this.swingT = 0
+        this.viewmodel.swing()
+      }
       if (!this.breaking || this.breaking.x !== hit.block.x || this.breaking.y !== hit.block.y || this.breaking.z !== hit.block.z) {
         this.breaking = { x: hit.block.x, y: hit.block.y, z: hit.block.z, progress: 0 }
       }
@@ -593,11 +792,17 @@ export class Game {
         if (this.hitTimer <= 0) {
           this.hitTimer = 0.25
           this.audio.hit(b)
+          // astillas en la cara que golpeas
+          const px = hit.block.x + 0.5 + (hit.place.x - hit.block.x) * 0.5
+          const py = hit.block.y + 0.5 + (hit.place.y - hit.block.y) * 0.5
+          const pz = hit.block.z + 0.5 + (hit.place.z - hit.block.z) * 0.5
+          this.particles.burst(px, py, pz, b, 3, 0.2)
         }
         if (this.breaking.progress >= 1) {
           this.audio.break(b)
-          this.world.setBlock(hit.block.x, hit.block.y, hit.block.z, Block.AIR)
-          this.markDirtyAround(hit.block.x, hit.block.z)
+          this.particles.burst(hit.block.x + 0.5, hit.block.y + 0.5, hit.block.z + 0.5, b, 32, 0.45)
+          this.removeBlock(hit.block.x, hit.block.y, hit.block.z)
+          this.markDirtyAround(hit.block.x, hit.block.z, blockDef(b).glow > 0)
           this.afterBlockChange(hit.block.x, hit.block.y, hit.block.z)
           this.breaking = null
         }
@@ -617,17 +822,114 @@ export class Game {
 
     this.placeCooldown -= dt
     if (this.mouse.right && hit && this.placeCooldown <= 0) {
+      this.placeCooldown = 0.22
+      // primero: ¿el bloque que miras se usa? (puertas, trampillas)
+      const target = this.world.getBlock(hit.block.x, hit.block.y, hit.block.z)
+      const tdef = blockDef(target)
+      if (tdef.interact && !this.player.crouching) {
+        this.toggleBlock(hit.block.x, hit.block.y, hit.block.z)
+        this.swingT = 0
+        this.viewmodel.swing()
+        return
+      }
       const block = this.hotbar[this.slot]
       const p = hit.place
-      const there = this.world.getBlock(p.x, p.y, p.z)
-      if (block !== Block.AIR && (there === Block.AIR || blockDef(there).liquid) && !this.player.wouldCollideBlock(p.x, p.y, p.z)) {
-        this.world.setBlock(p.x, p.y, p.z, block)
-        this.audio.place(block)
-        this.markDirtyAround(p.x, p.z)
-        this.afterBlockChange(p.x, p.y, p.z)
-        this.swingT = 0
+      if (block !== Block.AIR) this.placeBlock(block, p.x, p.y, p.z, hit.block)
+    }
+  }
+
+  /** la rotación con la que se pone algo: mira hacia el jugador (frente) o en su dirección */
+  private facingRot(towardPlayer: boolean): number {
+    // yaw 0 mira a -z; rot 0 = -z, 1 = +x, 2 = +z, 3 = -x
+    const dx = -Math.sin(this.yaw)
+    const dz = -Math.cos(this.yaw)
+    let rot = Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? 1 : 3) : dz > 0 ? 2 : 0
+    if (towardPlayer) rot = (rot + 2) % 4
+    return rot
+  }
+
+  private placeBlock(block: number, x: number, y: number, z: number, against: THREE.Vector3) {
+    const def = blockDef(block)
+    const there = this.world.getBlock(x, y, z)
+    if (!(there === Block.AIR || blockDef(there).liquid)) return
+    if (!def.passable && this.player.wouldCollideBlock(x, y, z)) return
+    let id = base(block)
+    // orientación: hornos/cofres miran al jugador; escaleras, camas y trampillas van en la dirección del jugador
+    // hornos/cofres/mesas: el frente hacia ti. Puertas: el panel al fondo, de espaldas a ti. Escaleras: lado alto lejos de ti
+    if (def.orientable) id = withRot(id, this.facingRot(!!def.front || def.shape === 'ladder'))
+    // losas y trampillas: arriba si apuntas a la mitad superior de la cara lateral
+    const eyeDir = new THREE.Vector3()
+    this.camera.getWorldDirection(eyeDir)
+    const hitY = this.player.eye.y + eyeDir.y * this.player.eye.distanceTo(new THREE.Vector3(x + 0.5, y + 0.5, z + 0.5))
+    const upperHalf = hitY - y > 0.5
+    if (def.shape === 'slab') {
+      // pegar dos losas iguales hace un bloque entero si existe el bloque "doble"
+      if (against.y === y && base(this.world.getBlock(against.x, against.y, against.z)) === base(block)) {
+        const full = BLOCKS.find((b) => b.key === def.key.replace('_slab', ''))
+        if (full) {
+          this.world.setBlock(against.x, against.y, against.z, full.id)
+          this.audio.place(block)
+          this.markDirtyAround(against.x, against.z)
+          this.swingT = 0
+          this.viewmodel.swing()
+          return
+        }
       }
-      this.placeCooldown = 0.22
+      id = withState(id, upperHalf || against.y > y)
+    }
+    if (def.shape === 'stairs') id = withState(id, upperHalf || against.y > y)
+    if (def.tall) {
+      // puerta: arriba; cama: cabecera en la dirección que miras
+      const rot = rotOf(id)
+      const [ox, oy, oz] = def.shape === 'door' ? [0, 1, 0] : [[0, 0, -1], [1, 0, 0], [0, 0, 1], [-1, 0, 0]][rot]
+      const other = this.world.getBlock(x + ox, y + oy, z + oz)
+      if (!(other === Block.AIR || blockDef(other).liquid)) return
+      if (def.shape === 'bed' && !isSolidBelow(this.world, x + ox, y, z + oz)) return
+      this.world.setBlock(x + ox, y + oy, z + oz, withState(id, true))
+      this.markDirtyAround(x + ox, z + oz)
+    }
+    if ((def.shape === 'cross' || def.shape === 'torch' || def.shape === 'door' || def.shape === 'bed' || def.shape === 'carpet') && !isSolidBelow(this.world, x, y, z)) return
+    this.world.setBlock(x, y, z, id)
+    this.audio.place(block)
+    this.markDirtyAround(x, z, def.glow > 0)
+    this.afterBlockChange(x, y, z)
+    this.swingT = 0
+    this.viewmodel.swing()
+  }
+
+  /** abre o cierra una puerta / trampilla (las dos mitades de la puerta a la vez) */
+  private toggleBlock(x: number, y: number, z: number) {
+    const b = this.world.getBlock(x, y, z)
+    const def = blockDef(b)
+    const flip = (id: number) => id ^ (1 << 15)
+    this.world.setBlock(x, y, z, flip(b))
+    this.markDirtyAround(x, z)
+    if (def.shape === 'door') {
+      const oy = stateOf(b) ? -1 : 1
+      const o = this.world.getBlock(x, y + oy, z)
+      if (base(o) === base(b)) this.world.setBlock(x, y + oy, z, flip(o))
+    }
+    this.audio.ui(((b >> 15) & 1) === 0 ? 'open' : 'close')
+  }
+
+  /** al romper una puerta o cama se va la otra mitad también */
+  private removeBlock(x: number, y: number, z: number) {
+    const b = this.world.getBlock(x, y, z)
+    const def = blockDef(b)
+    this.world.setBlock(x, y, z, Block.AIR)
+    if (def.tall) {
+      const rot = rotOf(b)
+      let ox = 0, oy = 0, oz = 0
+      if (def.shape === 'door') oy = stateOf(b) ? -1 : 1
+      else {
+        const d = [[0, 0, -1], [1, 0, 0], [0, 0, 1], [-1, 0, 0]][rot]
+        const s = stateOf(b) ? -1 : 1
+        ox = d[0] * s; oz = d[2] * s
+      }
+      if (base(this.world.getBlock(x + ox, y + oy, z + oz)) === base(b)) {
+        this.world.setBlock(x + ox, y + oy, z + oz, Block.AIR)
+        this.markDirtyAround(x + ox, z + oz)
+      }
     }
   }
 
@@ -656,7 +958,7 @@ export class Game {
     // por detrás mira hacia donde miras; de frente, la cámara te mira a ti
     const dir = this.cameraMode === 1 ? forward.clone().negate() : forward
     let dist = 4.5
-    const hit = raycastVoxel(this.world, eye, dir, dist)
+    const hit = raycastVoxel(this.world, eye, dir, dist, true)
     if (hit) dist = Math.max(0.5, eye.distanceTo(hit.place) - 0.3)
     this.cameraGoal.copy(eye).addScaledVector(dir, dist)
     // la cámara viaja hasta su sitio en vez de saltar (como el seguimiento del portafolio)
@@ -737,6 +1039,7 @@ export class Game {
     this.sky.update(dt, this.scene, this.camera.position, this.player.headInWater, fogFar)
     this.sky.updateShadowCamera(this.player.position)
     this.clock += dt
+    this.materials.foliage.update(this.clock)
     this.materials.water.update(this.clock, this.sky.sunDir, this.sky.sunColor, this.sky.horizon, this.sky.daylight)
     // pasos: cada 1.7 bloques andados en el suelo suena el bloque que pisas (corriendo, más seguido)
     const p = this.player.position
@@ -770,10 +1073,21 @@ export class Game {
     }
     this.splash.update(dt)
     this.falling.update(dt)
+    this.particles.update(dt)
+    this.items.update(dt, this.player.position)
+    this.music.update(dt)
     this.liquids.update(dt)
 
-    this.renderer.render(this.scene, this.camera)
-    if (!this.player.headInWater) {
+    if (this.postfx.active) this.postfx.render(dt)
+    else this.renderer.render(this.scene, this.camera)
+    if (this.cameraMode === 0) {
+      this.viewmodel.update(dt, this.player.speed, this.player.onGround, this.player.crouching)
+      this.renderer.autoClear = false
+      this.renderer.clearDepth()
+      this.renderer.render(this.handScene, this.handCamera)
+      this.renderer.autoClear = true
+    }
+    if (this.settings.godRays && !this.player.headInWater) {
       const strength = 1.1 * Math.min(1, Math.max(0, this.sky.elevation * 5 + 0.2)) * Math.max(0.3, this.sky.daylight)
       this.godRays.render(this.renderer, this.scene, this.camera, this.sky.sunDir, this.sky.sunColor, strength)
     }
@@ -784,6 +1098,21 @@ export class Game {
       this.fps = Math.round(this.fpsCount / this.fpsTimer)
       this.fpsCount = 0
       this.fpsTimer = 0
+      // en 'auto', si no llega a 30 fps durante 6 s seguidos se baja un escalón
+      if (this.settings.quality === 'auto' && this.effective !== 'baja') {
+        this.adaptTimer = this.fps < 30 ? this.adaptTimer + 0.5 : 0
+        if (this.adaptTimer >= 6) {
+          this.adaptTimer = 0
+          const order: Quality[] = ['baja', 'media', 'alta', 'ultra']
+          const lower = order[Math.max(0, order.indexOf(this.effective) - 1)] as Exclude<Quality, 'auto'>
+          this.effective = lower
+          const { shadows: _s, ...rest } = QUALITY_PRESETS[lower]
+          Object.assign(this.settings, rest)
+          this.renderer.setPixelRatio(Math.min(window.devicePixelRatio * this.settings.resolution, 2))
+          this.applyFx()
+          this.updateWanted(true)
+        }
+      }
     }
     this.hudTimer += dt
     if (this.hudTimer > 0.2) {
@@ -807,6 +1136,8 @@ export class Game {
       hotbar: this.hotbar,
       slot: this.slot,
       flying: this.player.flying,
+      time: this.sky?.time,
+      timeFlowing: this.settings.timeFlowing,
     })
   }
 
@@ -816,9 +1147,15 @@ export class Game {
     const targetName = hit ? blockDef(this.world.getBlock(hit.block.x, hit.block.y, hit.block.z)).name : ''
     let loading = 0
     for (const s of this.chunks.values()) if (!s.meshed) loading++
+    let spawnDone = 0
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dz = -1; dz <= 1; dz++) {
+        if (this.chunks.get(chunkKey(this.playerChunk.cx + dx, this.playerChunk.cz + dz))?.meshed) spawnDone++
+      }
+    }
     this.callbacks.onHud({
       locked: this.locked,
-      ready: !!this.atlas,
+      ready: !!this.atlas && this.spawnedReady,
       slot: this.slot,
       hotbar: [...this.hotbar],
       fps: this.fps,
@@ -834,13 +1171,28 @@ export class Game {
       skin: this.settings.skin,
       seed: this.settings.seed,
       shadows: this.settings.shadows,
+      quality: this.settings.quality,
+      effective: this.effective,
+      ssao: this.settings.ssao,
+      bloom: this.settings.bloom,
+      vignette: this.settings.vignette,
+      godRays: this.settings.godRays,
+      resolution: this.settings.resolution,
+      gpu: this.gpu,
+      music: this.settings.music,
+      musicVolume: this.settings.musicVolume,
+      track: this.music?.current ?? null,
+      renderRadius: this.settings.renderRadius,
+      timeFlowing: this.settings.timeFlowing,
       loading,
+      spawnProgress: spawnDone / 9,
       time: this.sky?.time ?? 0,
     })
   }
 
   dispose() {
     this.disposed = true
+    this.music?.dispose()
     cancelAnimationFrame(this.raf)
     this.save()
     this.pool?.dispose()

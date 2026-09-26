@@ -1,0 +1,42 @@
+# Sitio propio en la VPS de luisaldrichguz.net (subdominio, no ruta: el juego
+# usa rutas absolutas /textures/*, /fonts/*, /sounds/* por todos lados, y bajo
+# una ruta como /threecraft/ el navegador las buscaría en la raíz del dominio
+# y todo saldría roto). Vive en /etc/caddy/sites.d/, subido por ./scripts/deploy.sh
+# de ESTE repo — nunca desde el del portafolio.
+#
+# CSP entera y explícita, no importada: el juego malla el mundo en Web Workers
+# (worker-src) y no habla con nada de fuera (connect-src 'self' basta).
+threecraft.luisaldrichguz.net {
+	root * /srv/threecraft.luisaldrichguz.net
+	encode gzip zstd
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+		Cross-Origin-Opener-Policy same-origin
+		# style-src/font-src abren Google Fonts (Pixelify Sans, cargada en index.html):
+		# sin esto el CSP la bloquea en silencio y cae al monospace de reserva.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; media-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'self'"
+		-Server
+	}
+
+	# Con hash en el nombre (lo que emite Vite en /assets/) → un año e immutable.
+	@conHash path_regexp ^/(assets/)
+	header @conHash Cache-Control "public, max-age=31536000, immutable"
+
+	# Texturas, sonidos, skins y fuentes no llevan hash (`dirt.png` se llama
+	# igual siempre) — una semana, no un año: si cambia una sin renombrarla,
+	# que tarde días en notarse y no meses.
+	@estaticos path /textures/* /sounds/* /skins/* /fonts/*
+	header @estaticos Cache-Control "public, max-age=604800"
+
+	# El index.html decide si se ve la versión nueva: nunca se cachea.
+	@vivo path /index.html /
+	header @vivo Cache-Control "no-cache"
+
+	try_files {path} /index.html
+	file_server
+}
