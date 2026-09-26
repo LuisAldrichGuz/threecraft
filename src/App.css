@@ -64,9 +64,10 @@ button { font-family: var(--font); }
 /* ---------------------------------------------------------------- HUD */
 .crosshair {
   position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px;
-  pointer-events: none; filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000);
+  pointer-events: none;
 }
-.crosshair::before, .crosshair::after { content: ''; position: absolute; background: #fff; }
+/* blanca con borde negro duro de 1px: se ve igual sobre nieve que sobre una cueva */
+.crosshair::before, .crosshair::after { content: ''; position: absolute; background: #fff; box-shadow: 0 0 0 1px #000; }
 .crosshair::before { left: 10px; top: 0; width: 2px; height: 22px; }
 .crosshair::after { top: 10px; left: 0; height: 2px; width: 22px; }
 
