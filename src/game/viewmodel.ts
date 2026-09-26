@@ -13,14 +13,14 @@ import { loadSkin, makeBox } from './playerModel'
  * al romper o poner.
  */
 const BLOCK_POS = new THREE.Vector3(0.56, -0.52, -0.72)
-const ARM_POS = new THREE.Vector3(0.86, -0.92, -0.5)
+const ARM_POS = new THREE.Vector3(0.78, -0.98, -0.42)
 // hacia dónde apunta la mano desde el hombro: arriba-izquierda y **hacia dentro de la
 // pantalla** (como en Minecraft se ve el brazo en escorzo, con la mano al fondo y el
 // hombro cerca, fuera del cuadro), y un giro sobre ese eje para ver el dorso de la mano
-const ARM_DIR = new THREE.Vector3(-0.45, 0.55, -0.7).normalize()
+const ARM_DIR = new THREE.Vector3(-0.32, 0.42, -0.85).normalize()
 const ARM_QUAT = new THREE.Quaternion()
   .setFromUnitVectors(new THREE.Vector3(0, -1, 0), ARM_DIR)
-  .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, -1, 0), -0.4))
+  .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, -1, 0), 0.35))
 
 export class Viewmodel {
   group = new THREE.Group()

@@ -91,7 +91,7 @@ export type Quality = 'auto' | 'baja' | 'media' | 'alta' | 'ultra'
 export const DEFAULT_SETTINGS: Settings = {
   seed: 1337, skin: 'aldrich', thirdPerson: false, renderRadius: 6, shadows: true, timeFlowing: true,
   quality: 'auto', ssao: false, bloom: false, vignette: false, godRays: true, resolution: 1,
-  music: true, musicVolume: 0.5,
+  music: true, musicVolume: 0.3,
 }
 
 /** lo que enciende cada preset */
