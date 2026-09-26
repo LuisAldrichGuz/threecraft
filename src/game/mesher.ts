@@ -351,7 +351,8 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
         }
 
         if (def.cutout) {
-          const target = def.category === 'plants' ? foliage : cutout
+          // lo que se mece: hojas y plantas, se llame como se llame su categoría (que cambia)
+          const target = /leaves|azalea|flower|fern|grass|sapling|vine|kelp|bamboo/.test(def.key) ? foliage : cutout
           for (const f of FACES) {
             const n = field.block(x + f.dir[0], y + f.dir[1], z + f.dir[2])
             if (n === UNKNOWN || n === block || isOpaque(n)) continue
