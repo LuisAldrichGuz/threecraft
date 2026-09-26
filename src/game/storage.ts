@@ -82,6 +82,8 @@ export interface Settings {
   godRays: boolean
   /** resolución de render (1 = nativa) */
   resolution: number
+  music: boolean
+  musicVolume: number
 }
 
 export type Quality = 'auto' | 'baja' | 'media' | 'alta' | 'ultra'
@@ -89,6 +91,7 @@ export type Quality = 'auto' | 'baja' | 'media' | 'alta' | 'ultra'
 export const DEFAULT_SETTINGS: Settings = {
   seed: 1337, skin: 'aldrich', thirdPerson: false, renderRadius: 6, shadows: true, timeFlowing: true,
   quality: 'auto', ssao: false, bloom: false, vignette: false, godRays: true, resolution: 1,
+  music: true, musicVolume: 0.5,
 }
 
 /** lo que enciende cada preset */
@@ -139,6 +142,8 @@ export interface WorldMeta {
   name: string
   createdAt: number
   lastPlayed: number
+  /** miniatura jpeg en dataURL, del último Game.snapshot() al salir */
+  thumbnail?: string
 }
 
 const WORLDS_KEY = 'worlds'
@@ -157,6 +162,15 @@ export function touchWorld(seed: number) {
   const w = worlds.find((x) => x.seed === seed)
   if (w) {
     w.lastPlayed = Date.now()
+    write(WORLDS_KEY, worlds)
+  }
+}
+
+export function setThumbnail(seed: number, dataUrl: string) {
+  const worlds = listWorlds()
+  const w = worlds.find((x) => x.seed === seed)
+  if (w) {
+    w.thumbnail = dataUrl
     write(WORLDS_KEY, worlds)
   }
 }
