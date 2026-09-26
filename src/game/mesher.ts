@@ -1,4 +1,4 @@
-import { Block, blockDef, isOpaque, rotOf, stateOf, base, type Face } from './blocks'
+import { Block, blockDef, isOpaque, blocksLight, rotOf, stateOf, base, type Face } from './blocks'
 import { CHUNK_SIZE, WORLD_HEIGHT } from './constants'
 
 /**
@@ -124,7 +124,7 @@ class LightField {
           const i = LightField.idx(lx, y, lz)
           blocks[i] = b
           if (b !== UNKNOWN && blockDef(b).glow && sources < lightSources.length) lightSources[sources++] = i
-          if (b === UNKNOWN || isOpaque(b)) {
+          if (b === UNKNOWN || blocksLight(b)) {
             sun = 0
             continue
           }
@@ -173,7 +173,7 @@ class LightField {
           if (k === 5 && y === 0) continue
           const j = i + N[k]
           const b = blocks[j]
-          if (b === UNKNOWN || isOpaque(b)) continue
+          if (b === UNKNOWN || blocksLight(b)) continue
           const nl = blockDef(b).liquid ? l - 1 : l
           if (field[j] < nl) {
             field[j] = nl
@@ -242,7 +242,7 @@ class GeometryBuilder {
     this.idx = ni
   }
 
-  quad(x: number, y: number, z: number, def: FaceDef, r: UVRect, ao: number[], light: number, heightScale = 1, yBase = 0, topHeights?: number[]) {
+  quad(x: number, y: number, z: number, def: FaceDef, r: UVRect, ao: number[], light: number | number[], heightScale = 1, yBase = 0, topHeights?: number[]) {
     if ((this.verts + 4) * 3 > this.pos.length) this.grow()
     const start = this.verts
     const [u0, v0, u1, v1] = r
@@ -251,8 +251,6 @@ class GeometryBuilder {
     const vb = v0 + (v1 - v0) * yBase
     const vt = v0 + (v1 - v0) * heightScale
     const vs = def.dir[1] === 0 ? [vb, vb, vt, vt] : [v0, v0, v1, v1]
-    const lf = lightFactor(light) * def.shade
-    const bf = blockFactor(light)
     for (let i = 0; i < 4; i++) {
       const c = def.corners[i]
       const p = (start + i) * 3
@@ -266,6 +264,10 @@ class GeometryBuilder {
       this.norm[p + 2] = def.dir[2]
       this.uv[(start + i) * 2] = us[i]
       this.uv[(start + i) * 2 + 1] = vs[i]
+      // luz por vértice (no por cara): así se interpola en el borde con el bloque de al lado
+      const li = Array.isArray(light) ? light[i] : light
+      const lf = lightFactor(li) * def.shade
+      const bf = blockFactor(li)
       const v = lf * AO_LEVELS[ao[i]]
       this.col[q] = v
       this.col[q + 1] = v
@@ -290,7 +292,7 @@ class GeometryBuilder {
    * la textura recortada al trozo de cara que ocupa (como los modelos de
    * Minecraft). `uvFace` da la textura para cada cara.
    */
-  box(x: number, y: number, z: number, b: [number, number, number, number, number, number], uvFace: (f: FaceDef) => UVRect, light: number, faces?: boolean[]) {
+  box(x: number, y: number, z: number, b: [number, number, number, number, number, number], uvFace: (f: FaceDef) => UVRect, light: number | ((f: FaceDef) => number[]), faces?: boolean[]) {
     const [x0, y0, z0, x1, y1, z1] = b.map((v) => v / 16)
     for (let fi = 0; fi < FACES.length; fi++) {
       if (faces && !faces[fi]) continue
@@ -298,8 +300,8 @@ class GeometryBuilder {
       const [u0, v0, u1, v1] = uvFace(f)
       if ((this.verts + 4) * 3 > this.pos.length) this.grow()
       const start = this.verts
-      const lf = lightFactor(light) * f.shade
-      const bf = blockFactor(light)
+      // luz por vértice si `light` la da por cara (`lightFor`); si no, plana (torch, self-lit)
+      const faceLight = typeof light === 'function' ? light(f) : light
       const t1 = f.tangents[0]
       const t2 = f.tangents[1]
       for (let i = 0; i < 4; i++) {
@@ -320,6 +322,9 @@ class GeometryBuilder {
         this.norm[p + 2] = f.dir[2]
         this.uv[(start + i) * 2] = u0 + (u1 - u0) * su
         this.uv[(start + i) * 2 + 1] = v0 + (v1 - v0) * sv
+        const li = Array.isArray(faceLight) ? faceLight[i] : faceLight
+        const lf = lightFactor(li) * f.shade
+        const bf = blockFactor(li)
         const q = (start + i) * 4
         this.col[q] = lf
         this.col[q + 1] = lf
@@ -367,6 +372,58 @@ class GeometryBuilder {
         this.indices += 6
       }
     }
+  }
+
+  /**
+   * un poste inclinado: caja de 2/16 de lado que va del centro `b` (abajo) al
+   * centro `t` (arriba), en fracciones de bloque. La textura es la columna
+   * central del tile (u 7..9) de la fila 0 a `texH`/16, entera aunque el poste
+   * esté torcido — es la antorcha de pared.
+   */
+  post(x: number, y: number, z: number, b: [number, number, number], t: [number, number, number], r: UVRect, texH: number, light: number) {
+    const [u0, v0, u1, v1] = r
+    const ua = u0 + (u1 - u0) * (7 / 16)
+    const ub = u0 + (u1 - u0) * (9 / 16)
+    const vt = v0 + (v1 - v0) * (texH / 16)
+    const w = 1 / 16
+    // cuatro lados: (dx, dz) de la normal y sus dos esquinas a lo largo del lado
+    const sides: [number, number, [number, number], [number, number]][] = [
+      [1, 0, [w, -w], [w, w]], [-1, 0, [-w, w], [-w, -w]], [0, 1, [w, w], [-w, w]], [0, -1, [-w, -w], [w, -w]],
+    ]
+    const lf = lightFactor(light) * 0.8
+    const bf = blockFactor(light)
+    const emit = (c: [number, number, number][], n: [number, number, number], uvs: [number, number][]) => {
+      if ((this.verts + 4) * 3 > this.pos.length) this.grow()
+      const start = this.verts
+      for (let i = 0; i < 4; i++) {
+        const p = (start + i) * 3
+        const q = (start + i) * 4
+        this.pos[p] = x + c[i][0]; this.pos[p + 1] = y + c[i][1]; this.pos[p + 2] = z + c[i][2]
+        this.norm[p] = n[0]; this.norm[p + 1] = n[1]; this.norm[p + 2] = n[2]
+        this.uv[(start + i) * 2] = uvs[i][0]; this.uv[(start + i) * 2 + 1] = uvs[i][1]
+        this.col[q] = lf; this.col[q + 1] = lf; this.col[q + 2] = lf; this.col[q + 3] = bf
+      }
+      const k = this.indices
+      this.idx[k] = start; this.idx[k + 1] = start + 1; this.idx[k + 2] = start + 2
+      this.idx[k + 3] = start; this.idx[k + 4] = start + 2; this.idx[k + 5] = start + 3
+      this.verts += 4
+      this.indices += 6
+    }
+    for (const [nx, nz, c0, c1] of sides) {
+      emit(
+        [[b[0] + c0[0], b[1], b[2] + c0[1]], [b[0] + c1[0], b[1], b[2] + c1[1]], [t[0] + c1[0], t[1], t[2] + c1[1]], [t[0] + c0[0], t[1], t[2] + c0[1]]],
+        [nx, 0, nz],
+        [[ua, v0], [ub, v0], [ub, vt], [ua, vt]],
+      )
+    }
+    // la tapa: el centro de la llama (filas 8..10 del tile)
+    const va = v0 + (v1 - v0) * (8 / 16)
+    const vb = v0 + (v1 - v0) * (10 / 16)
+    emit(
+      [[t[0] - w, t[1], t[2] + w], [t[0] + w, t[1], t[2] + w], [t[0] + w, t[1], t[2] - w], [t[0] - w, t[1], t[2] - w]],
+      [0, 1, 0],
+      [[ua, va], [ub, va], [ub, vb], [ua, vb]],
+    )
   }
 
   finish(): MeshBuffers {
@@ -428,6 +485,38 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
       ao[i] = side1 && side2 ? 0 : 3 - (side1 + side2 + corner)
     }
     return ao
+  }
+
+  // luz "suave": cada esquina promedia su celda con las 1-3 vecinas que la tocan
+  // (las mismas de aoFor), igual que el "smooth lighting" de Minecraft — si no,
+  // la luz es plana por cara y se ve el escalón exacto donde empieza el bloque de al lado
+  const cornerLight = [0, 0, 0, 0]
+  const lightFor = (x: number, y: number, z: number, def: FaceDef): number[] => {
+    const d = def.dir
+    const t1 = def.tangents[0]
+    const t2 = def.tangents[1]
+    const bx = x + d[0]
+    const by = y + d[1]
+    const bz = z + d[2]
+    for (let i = 0; i < 4; i++) {
+      const [s1, s2] = CORNER_SIGNS[i]
+      let sky = 0, blk = 0, n = 0
+      const sample = (ox: number, oy: number, oz: number) => {
+        const bxx = bx + ox, byy = by + oy, bzz = bz + oz
+        const bb = field.block(bxx, byy, bzz)
+        if (bb === UNKNOWN || occludes(bb)) return
+        const l = field.light(bxx, byy, bzz)
+        sky += l & 15; blk += l >> 4; n++
+      }
+      // sólo las dos vecinas directas: la diagonal de la esquina puede caer al
+      // otro lado de un muro de 1 bloque (dos paredes que se juntan en escuadra)
+      // y sin ser opaca ella misma, se traía la luz de fuera para adentro
+      sample(0, 0, 0)
+      sample(t1[0] * s1, t1[1] * s1, t1[2] * s1)
+      sample(t2[0] * s2, t2[1] * s2, t2[2] * s2)
+      cornerLight[i] = n ? pack(Math.round(sky / n), Math.round(blk / n)) : field.light(bx, by, bz)
+    }
+    return cornerLight
   }
 
   for (let lx = 0; lx < CHUNK_SIZE; lx++) {
@@ -509,14 +598,14 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
             for (const f of FACES) {
               const n = field.block(x + f.dir[0], y + f.dir[1], z + f.dir[2])
               if (n === UNKNOWN || base(n) === base(block) || isOpaque(n)) continue
-              target.quad(x, y, z, f, faceUV(f), aoFor(x, y, z, f), lightFace(f))
+              target.quad(x, y, z, f, faceUV(f), aoFor(x, y, z, f), lightFor(x, y, z, f))
             }
             continue
           }
           for (const f of FACES) {
             const n = field.block(x + f.dir[0], y + f.dir[1], z + f.dir[2])
             if (n === UNKNOWN || isOpaque(n)) continue
-            const light = def.glow ? pack(lightFace(f) & 15, 15) : lightFace(f)
+            const light = def.glow ? pack(lightFace(f) & 15, 15) : lightFor(x, y, z, f)
             opaque.quad(x, y, z, f, faceUV(f), aoFor(x, y, z, f), light)
           }
           continue
@@ -524,7 +613,8 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
 
         // ---- formas parciales: se dibujan enteras salvo la cara pegada a un opaco
         const target = def.cutout ? cutout : opaque
-        const lit = def.glow ? pack(15, 15) : FACES.map(lightFace).reduce(packMax, lightHere)
+        // por vértice (igual que las caras de cubo), salvo lo que brilla por sí mismo, que va parejo
+        const lit: number | ((f: FaceDef) => number[]) = def.glow ? pack(15, 15) : (f: FaceDef) => lightFor(x, y, z, f)
         type B6 = [number, number, number, number, number, number]
 
         if (def.shape === 'slab') {
@@ -549,14 +639,28 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
         }
 
         if (def.shape === 'cross') {
-          foliage.cross(x, y, z, uvFor(block, 'side'), lit, 0.15)
+          // plana: son dos planos finos, no vale la pena suavizar por vértice
+          foliage.cross(x, y, z, uvFor(block, 'side'), def.glow ? pack(15, 15) : lightHere, 0.15)
           continue
         }
 
         if (def.shape === 'torch') {
-          // palo de 2/16 con la textura entera (la antorcha ocupa el centro de su tile)
+          // palo de 2/16 con la columna central del tile (la antorcha ocupa el centro)
           const tex = uvFor(block, 'side')
-          cutout.box(x, y, z, [7, 0, 7, 9, 10, 9], () => tex, 15)
+          const torchLight = pack(lightHere & 15, 15)
+          if (state) {
+            // pegada a la pared: nace en la pared a 3/16 de alto y se inclina hacia
+            // afuera (`rot` = hacia dónde sale; rot 0 = -z, la pared queda en +z)
+            const spin = (px: number, pz: number): [number, number] => {
+              for (let i = 0; i < rot; i++) [px, pz] = [1 - pz, px]
+              return [px, pz]
+            }
+            const [bx, bz] = spin(0.5, 15 / 16)
+            const [tx, tz] = spin(0.5, 10 / 16)
+            cutout.post(x, y, z, [bx, 3 / 16, bz], [tx, 13 / 16, tz], tex, 10, torchLight)
+          } else {
+            cutout.box(x, y, z, [7, 0, 7, 9, 10, 9], () => tex, torchLight)
+          }
           continue
         }
 

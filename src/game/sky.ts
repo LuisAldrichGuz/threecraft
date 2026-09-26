@@ -70,8 +70,8 @@ export class Sky {
     scene.add(this.sun, this.sun.target, this.ambient)
 
     if (shadows) {
-      // sombras pixeladas a propósito, como los shaders de Minecraft: mapa
-      // pequeño (cada texel cubre ~0.1 bloque) y sin suavizado (BasicShadowMap)
+      // suavizadas (PCFSoftShadowMap en Game.ts): las de mapa pixelado sin
+      // suavizado no le gustaron a Luis
       this.sun.castShadow = true
       this.sun.shadow.mapSize.set(2048, 2048)
       const cam = this.sun.shadow.camera

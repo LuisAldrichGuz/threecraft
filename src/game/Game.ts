@@ -18,6 +18,7 @@ import { GameAudio } from './audio'
 import { FallingBlocks } from './fallingBlocks'
 import { Liquids } from './liquids'
 import { BlockParticles } from './particles'
+import { TorchFire } from './torchFire'
 import { Viewmodel } from './viewmodel'
 import { ItemEntities } from './items'
 import { Music, type Track } from './music'
@@ -143,6 +144,7 @@ export class Game {
   private falling!: FallingBlocks
   private liquids!: Liquids
   private particles!: BlockParticles
+  private fire = new TorchFire()
   private items!: ItemEntities
   private music!: Music
   private stepDistance = 0
@@ -206,7 +208,7 @@ export class Game {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
     if (this.settings.shadows) {
       this.renderer.shadowMap.enabled = true
-      this.renderer.shadowMap.type = THREE.BasicShadowMap
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
     }
 
     // el plano lejano tiene que cubrir lo que pida la distancia de render, si no los chunks de más
@@ -303,6 +305,7 @@ export class Game {
     }
     this.particles = new BlockParticles(this.atlas)
     this.scene.add(this.particles.points)
+    this.scene.add(this.fire.points)
     this.liquids = new Liquids(this.world)
     this.liquids.onChange = (x, _y, z) => this.markDirtyAround(x, z)
     this.falling = new FallingBlocks(this.scene, this.world, this.atlas, this.heldMaterial)
@@ -428,7 +431,9 @@ export class Game {
         foliage.renderOrder = 1
         const water = new THREE.Mesh(buffersToGeometry(mesh.water), this.materials.water)
         opaque.castShadow = opaque.receiveShadow = true
-        cutout.castShadow = cutout.receiveShadow = true
+        // sin sombra propia: puertas, trampillas y antorchas son finas y su sombra
+        // no aporta nada — en la antorcha además tapaba que ella misma alumbra
+        cutout.receiveShadow = true
         water.receiveShadow = true
         water.renderOrder = 2
         cutout.renderOrder = 1
@@ -857,6 +862,15 @@ export class Game {
     // orientación: hornos/cofres miran al jugador; escaleras, camas y trampillas van en la dirección del jugador
     // hornos/cofres/mesas: el frente hacia ti. Puertas: el panel al fondo, de espaldas a ti. Escaleras: lado alto lejos de ti
     if (def.orientable) id = withRot(id, this.facingRot(!!def.front || def.shape === 'ladder'))
+    // antorcha puesta sobre una cara lateral: se pega a esa pared (state=true) y el
+    // rot apunta hacia afuera, haya piso o no — como en Minecraft, decide la cara que tocas
+    if (def.shape === 'torch') {
+      const wdx = x - against.x, wdy = y - against.y, wdz = z - against.z
+      if (wdy === 0 && (wdx !== 0 || wdz !== 0)) {
+        const rot = wdx !== 0 ? (wdx > 0 ? 1 : 3) : wdz > 0 ? 2 : 0
+        id = withState(withRot(id, rot), true)
+      }
+    }
     // losas y trampillas: arriba si apuntas a la mitad superior de la cara lateral
     const eyeDir = new THREE.Vector3()
     this.camera.getWorldDirection(eyeDir)
@@ -888,7 +902,8 @@ export class Game {
       this.world.setBlock(x + ox, y + oy, z + oz, withState(id, true))
       this.markDirtyAround(x + ox, z + oz)
     }
-    if ((def.shape === 'cross' || def.shape === 'torch' || def.shape === 'door' || def.shape === 'bed' || def.shape === 'carpet') && !isSolidBelow(this.world, x, y, z)) return
+    if (def.shape === 'torch' && !stateOf(id) && !isSolidBelow(this.world, x, y, z)) return
+    if ((def.shape === 'cross' || def.shape === 'door' || def.shape === 'bed' || def.shape === 'carpet') && !isSolidBelow(this.world, x, y, z)) return
     this.world.setBlock(x, y, z, id)
     this.audio.place(block)
     this.markDirtyAround(x, z, def.glow > 0)
@@ -1074,6 +1089,7 @@ export class Game {
     this.splash.update(dt)
     this.falling.update(dt)
     this.particles.update(dt)
+    this.fire.update(dt, this.world, this.player.position)
     this.items.update(dt, this.player.position)
     this.music.update(dt)
     this.liquids.update(dt)

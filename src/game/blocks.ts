@@ -198,6 +198,16 @@ export const withRot = (id: number, rot: number) => base(id) | ((rot & 3) << ROT
 export const withState = (id: number, on: boolean) => (on ? id | STATE_BIT : id & ~STATE_BIT)
 
 export const isOpaque = (id: number) => BLOCK_BY_ID[base(id)]?.opaque === true
+/**
+ * tapa la luz aunque no sea un cubo entero: losas y escaleras son mitad de
+ * bloque a la vista pero en Minecraft de verdad cortan toda la luz igual que
+ * un cubo — si no, un techo o una pared hechos de escaleras quedan destapados
+ */
+export const blocksLight = (id: number): boolean => {
+  const d = BLOCK_BY_ID[base(id)]
+  if (!d) return false
+  return d.opaque || d.shape === 'slab' || d.shape === 'stairs'
+}
 export const isLiquid = (id: number) => BLOCK_BY_ID[base(id)]?.liquid === true
 export const isWater = (id: number) => base(id) === Block.WATER || (BLOCK_BY_KEY.get('water_1')!.id <= base(id) && base(id) <= Block.WATER_FALL)
 /** el id del agua corriente con ese nivel (1-7), 8 = cayendo */
