@@ -13,7 +13,7 @@ export class FoliageMaterial extends THREE.MeshLambertMaterial {
   constructor(map: THREE.Texture) {
     super({ map, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide })
     this.onBeforeCompile = (shader) => {
-      withBlockLight(shader)
+      withBlockLight(shader, this.timeUniform)
       shader.uniforms.time = this.timeUniform
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nuniform float time;')

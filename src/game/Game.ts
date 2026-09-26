@@ -29,6 +29,9 @@ import { PostFX } from './postfx'
 import type { Biome } from './generator'
 
 /** ¿hay algo sólido debajo para apoyar flores, antorchas, puertas...? */
+/** hacia dónde mira cada `rot`: 0 = -z, 1 = +x, 2 = +z, 3 = -x */
+const OUTWARD: [number, number, number][] = [[0, 0, -1], [1, 0, 0], [0, 0, 1], [-1, 0, 0]]
+
 function isSolidBelow(world: World, x: number, y: number, z: number): boolean {
   return world.isSolidAt(x, y - 1, z)
 }
@@ -401,7 +404,12 @@ export class Game {
         const s = this.chunks.get(key)
         if (!s) return
         s.generating = false
-        this.world.insertChunk(cx, cz, blocks)
+        const chunk = this.world.insertChunk(cx, cz, blocks)
+        // sólo las ediciones pueden traer antorchas (el generador no pone): se asientan al cargar
+        for (const k in chunk.edits) {
+          const i = Number(k)
+          if (blockDef(chunk.edits[i]).shape === 'torch') this.settleTorch(cx * CHUNK_SIZE + (i & 15), i >> 8, cz * CHUNK_SIZE + ((i >> 4) & 15))
+        }
         s.dirty = true
         // los vecinos ya mallados tenían este borde tapado: ahora sí lo ven
         for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
@@ -466,6 +474,36 @@ export class Game {
     this.falling.check(x, y + 1, z)
     this.falling.check(x, y, z)
     this.liquids.touch(x, y, z)
+    // las antorchas que se apoyaban en este bloque
+    this.settleTorch(x, y + 1, z)
+    for (const [dx, , dz] of OUTWARD) this.settleTorch(x + dx, y, z + dz)
+  }
+
+  /**
+   * una antorcha sin apoyo (el mundo importado trae las de pared como si
+   * fueran de pie, o se rompió lo que la sostenía): se pega a la primera pared
+   * sólida que tenga al lado, y si no hay ninguna cae como objeto, como en
+   * Minecraft. Devuelve si cambió algo.
+   */
+  private settleTorch(x: number, y: number, z: number): boolean {
+    const b = this.world.getBlock(x, y, z)
+    if (b === Block.AIR || blockDef(b).shape !== 'torch') return false
+    if (stateOf(b)) {
+      const d = OUTWARD[rotOf(b)]
+      if (this.world.isSolidAt(x - d[0], y, z - d[2])) return false
+    } else if (isSolidBelow(this.world, x, y, z)) return false
+    for (let rot = 0; rot < 4; rot++) {
+      const d = OUTWARD[rot]
+      if (this.world.isSolidAt(x - d[0], y, z - d[2])) {
+        this.world.setBlock(x, y, z, withState(withRot(base(b), rot), true))
+        this.markDirtyAround(x, z, true)
+        return true
+      }
+    }
+    this.world.setBlock(x, y, z, Block.AIR)
+    this.items.drop(base(b), new THREE.Vector3(x + 0.5, y + 0.3, z + 0.5), new THREE.Vector3(0, 1, 0))
+    this.markDirtyAround(x, z, true)
+    return true
   }
 
   /** `wide`: la luz de una antorcha llega a 14 bloques, así que se remallan los 8 chunks de alrededor */
@@ -1056,6 +1094,8 @@ export class Game {
     this.clock += dt
     this.materials.foliage.update(this.clock)
     this.materials.water.update(this.clock, this.sky.sunDir, this.sky.sunColor, this.sky.horizon, this.sky.daylight)
+    this.materials.opaque.userData.blockLightTime.value = this.clock
+    this.materials.cutout.userData.blockLightTime.value = this.clock
     // pasos: cada 1.7 bloques andados en el suelo suena el bloque que pisas (corriendo, más seguido)
     const p = this.player.position
     if (this.player.onGround && this.player.speed > 0.5 && !this.player.inWater) {
