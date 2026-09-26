@@ -63,12 +63,12 @@ button { font-family: var(--font); }
 
 /* ---------------------------------------------------------------- HUD */
 .crosshair {
-  position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px;
-  pointer-events: none; mix-blend-mode: difference;
+  position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px;
+  pointer-events: none; filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000);
 }
 .crosshair::before, .crosshair::after { content: ''; position: absolute; background: #fff; }
-.crosshair::before { left: 8px; top: 0; width: 2px; height: 18px; }
-.crosshair::after { top: 8px; left: 0; height: 2px; width: 18px; }
+.crosshair::before { left: 10px; top: 0; width: 2px; height: 22px; }
+.crosshair::after { top: 10px; left: 0; height: 2px; width: 22px; }
 
 .underwater { position: absolute; inset: 0; pointer-events: none; background: rgba(20, 70, 120, 0.35); box-shadow: inset 0 0 120px rgba(0, 20, 60, 0.6); }
 
@@ -86,25 +86,20 @@ button { font-family: var(--font); }
 .slot.active::after { content: ''; position: absolute; inset: -5px; border: 3px solid #fff; box-shadow: inset 0 0 0 2px #7d7d7d, 0 0 0 2px #000; pointer-events: none; }
 
 /* ------------------------------------------------------------ overlays */
-.overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; gap: 8px; animation: fadeIn 0.2s ease; }
+.overlay { position: absolute; inset: 0; z-index: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; gap: 8px; animation: fadeIn 0.2s ease; }
 .overlay.tint { background: rgba(0, 0, 0, 0.55); }
 .overlay.dirt {
-  background-color: #2f2f2f; background-image: url('/textures/dirt.png'); background-size: 64px 64px; image-rendering: pixelated;
-  box-shadow: inset 0 0 0 100vmax rgba(0, 0, 0, 0.6);
+  background-color: #1a1a1a; background-image: url('/textures/dirt.png'); background-size: 64px 64px; image-rendering: pixelated;
+  box-shadow: inset 0 0 0 100vmax rgba(0, 0, 0, 0.78);
 }
 
-/* el panorama del menú: dos copias de la misma tira de 6 fotos, una detrás de otra,
-   que se desliza exactamente la mitad de su ancho — así vuelve a quedar igual y
-   parece que gira sin parar, sin importar el tamaño real de la imagen */
-.panorama-track {
-  position: absolute; inset: 0; z-index: -1; display: flex; height: 100%; pointer-events: none;
-  animation: panoramaScroll 90s linear infinite;
-}
-.panorama-track img { height: 100%; width: auto; display: block; flex: none; image-rendering: auto; }
-.panorama-tint { position: absolute; inset: 0; z-index: -1; background: rgba(0, 0, 0, 0.35); pointer-events: none; }
-@keyframes panoramaScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+/* el panorama del menú: una escena 3D de verdad, con la cámara girando sola */
+.panorama-live { position: absolute; inset: 0; z-index: 0; cursor: grab; touch-action: none; }
+.panorama-live:active { cursor: grabbing; }
+.panorama-live canvas { display: block; width: 100%; height: 100%; }
+.panorama-tint { position: absolute; inset: 0; z-index: 0; background: rgba(0, 0, 0, 0.35); pointer-events: none; }
 
-.pause { width: min(420px, 100%); display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.pause { position: relative; width: min(420px, 100%); display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .mc-row { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
 .mc-row .mc-btn { flex: 1 1 auto; min-width: 0; }
 
@@ -275,6 +270,7 @@ button { font-family: var(--font); }
 .world-meta { color: #6a6a6a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mc-btn.danger { background: #7a2f2f; }
 .mc-btn.danger:hover:not(:disabled) { background: #a13d3d; color: #fff; }
+.mc-row .mc-btn.small { flex: 0 0 auto; }
 .mc-btn:disabled { cursor: default; background: #4a4a4a; color: #8a8a8a; box-shadow: inset 2px 2px 0 #5a5a5a, inset -2px -2px 0 #2f2f2f; }
 
 .credit-row { display: flex; flex-direction: column; gap: 1px; }

@@ -1,13 +1,18 @@
 import * as THREE from 'three'
 import type { World } from './world'
+import { Block, isLiquid } from './blocks'
 
 export interface HitResult {
   block: THREE.Vector3
   place: THREE.Vector3
 }
 
-/** recorre la rejilla de voxels con DDA para saber a qué bloque apunta la cámara */
-export function raycastVoxel(world: World, origin: THREE.Vector3, dir: THREE.Vector3, maxDist = 6): HitResult | null {
+/**
+ * recorre la rejilla de voxels con DDA para saber a qué bloque apunta la cámara.
+ * Cuenta todo lo que no sea aire ni líquido (flores, antorchas, puertas abiertas
+ * también se apuntan); `solidOnly` limita a lo que choca (cámara de tercera persona).
+ */
+export function raycastVoxel(world: World, origin: THREE.Vector3, dir: THREE.Vector3, maxDist = 6, solidOnly = false): HitResult | null {
   let x = Math.floor(origin.x)
   let y = Math.floor(origin.y)
   let z = Math.floor(origin.z)
@@ -30,7 +35,8 @@ export function raycastVoxel(world: World, origin: THREE.Vector3, dir: THREE.Vec
   let t = 0
 
   while (t <= maxDist) {
-    if (world.isSolidAt(x, y, z)) {
+    const b = world.getBlock(x, y, z)
+    if (solidOnly ? world.isSolidAt(x, y, z) : b !== Block.AIR && !isLiquid(b)) {
       return {
         block: new THREE.Vector3(x, y, z),
         place: new THREE.Vector3(x - lastStep[0], y - lastStep[1], z - lastStep[2]),
