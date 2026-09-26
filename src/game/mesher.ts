@@ -603,8 +603,10 @@ export function buildBlockMesh(uv: UVTable, block: number): MeshBuffers {
     }
     return b.finish()
   }
+  // la cámara de los iconos mira desde +x/+z: la escalera se gira para que el escalón quede al fondo
+  const shown = def.shape === 'stairs' || def.shape === 'bed' ? (block & ~(3 << 12)) | (2 << 12) : block
   const one = {
-    getBlockForMesh: (x: number, y: number, z: number) => (x === 0 && y === 0 && z === 0 ? block : Block.AIR),
+    getBlockForMesh: (x: number, y: number, z: number) => (x === 0 && y === 0 && z === 0 ? shown : Block.AIR),
   }
   const m = buildChunkMesh(one, uv, 0, 0)
   // juntar opaco + recorte + follaje en un buffer y centrar
