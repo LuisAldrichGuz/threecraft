@@ -23,7 +23,9 @@ const AIR_SPEED = 4.5
 const AIR_RUN_SPEED = 5.4
 const CROUCH_SPEED = 1.6
 const SWIM_SPEED = 3
-const FLY_SPEED = 11
+// volar va como andar, y con correr como correr: 11 (y 22) era lanzarse por el mapa
+const FLY_SPEED = WALK_SPEED
+const FLY_RUN_SPEED = RUN_SPEED
 
 const GROUND_ACCEL = 18
 const GROUND_DECEL = 24
@@ -246,7 +248,7 @@ export class Player {
 
     let maxSpeed = this.crouching ? CROUCH_SPEED : this.running ? RUN_SPEED : WALK_SPEED
     if (!this.onGround && !this.flying && !this.inWater) maxSpeed = this.running ? AIR_RUN_SPEED : AIR_SPEED
-    if (this.flying) maxSpeed = input.run ? FLY_SPEED * 2 : FLY_SPEED
+    if (this.flying) maxSpeed = input.run ? FLY_RUN_SPEED : FLY_SPEED
     else if (this.inWater) maxSpeed = SWIM_SPEED
 
     const targetX = dirX * maxSpeed
