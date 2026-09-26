@@ -35,8 +35,12 @@ export class TorchFire {
   }
 
   /** dónde está la punta de una antorcha: de pie, arriba al centro; de pared, inclinada hacia afuera */
-  private tip(x: number, y: number, z: number, block: number): [number, number, number] {
-    if (!stateOf(block)) return [x + 0.5, y + 0.68, z + 0.5]
+  private tip(world: World, x: number, y: number, z: number, block: number): [number, number, number] {
+    if (!stateOf(block)) {
+      const below = world.getBlock(x, y - 1, z)
+      const drop = blockDef(below).shape === 'slab' && !stateOf(below) ? 0.5 : 0
+      return [x + 0.5, y + 0.68 - drop, z + 0.5]
+    }
     let px = 0.5
     let pz = 10 / 16
     for (let i = 0; i < rotOf(block); i++) [px, pz] = [1 - pz, px]
@@ -52,7 +56,7 @@ export class TorchFire {
       for (let z = cz - RADIUS; z <= cz + RADIUS; z++) {
         for (let y = Math.max(0, cy - 10); y <= cy + 12; y++) {
           const b = world.getBlock(x, y, z)
-          if (b !== 0 && blockDef(b).shape === 'torch') this.torches.push(this.tip(x, y, z, b))
+          if (b !== 0 && blockDef(b).shape === 'torch') this.torches.push(this.tip(world, x, y, z, b))
         }
       }
     }

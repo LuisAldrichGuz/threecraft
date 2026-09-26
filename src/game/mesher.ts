@@ -659,7 +659,10 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
             const [tx, tz] = spin(0.5, 10 / 16)
             cutout.post(x, y, z, [bx, 3 / 16, bz], [tx, 13 / 16, tz], tex, 10, torchLight)
           } else {
-            cutout.box(x, y, z, [7, 0, 7, 9, 10, 9], () => tex, torchLight)
+            // sobre una losa de abajo, baja medio bloque para apoyarse en ella
+            const below = field.block(x, y - 1, z)
+            const drop = below !== UNKNOWN && blockDef(below).shape === 'slab' && !stateOf(below) ? 0.5 : 0
+            cutout.box(x, y - drop, z, [7, 0, 7, 9, 10, 9], () => tex, torchLight)
           }
           continue
         }

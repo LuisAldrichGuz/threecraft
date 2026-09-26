@@ -904,7 +904,12 @@ export class Game {
     // rot apunta hacia afuera, haya piso o no — como en Minecraft, decide la cara que tocas
     if (def.shape === 'torch') {
       const wdx = x - against.x, wdy = y - against.y, wdz = z - against.z
-      if (wdy === 0 && (wdx !== 0 || wdz !== 0)) {
+      const aShape = blockDef(this.world.getBlock(against.x, against.y, against.z)).shape
+      if (aShape === 'slab' || aShape === 'stairs') {
+        // sobre un medio bloque va encima, nunca en su costado (Minecraft no deja ni eso; aquí sí)
+        if (this.world.getBlock(against.x, against.y + 1, against.z) !== Block.AIR) return
+        x = against.x; y = against.y + 1; z = against.z
+      } else if (wdy === 0 && (wdx !== 0 || wdz !== 0)) {
         const rot = wdx !== 0 ? (wdx > 0 ? 1 : 3) : wdz > 0 ? 2 : 0
         id = withState(withRot(id, rot), true)
       }
