@@ -79,7 +79,8 @@ export function materialOf(block: number): Material {
   const d = blockDef(block)
   const k = d.key
   if (d.liquid) return 'water'
-  if (/wool|carpet|sponge|hay|moss|mushroom|leaves|azalea|kelp/.test(k)) return k.includes('leaves') || k.includes('moss') ? 'grass' : 'wool'
+  if (d.shape === 'cross' || d.shape === 'torch') return 'grass'
+  if (/wool|carpet|sponge|hay|moss|mushroom|leaves|azalea|kelp|bed/.test(k)) return k.includes('leaves') || k.includes('moss') ? 'grass' : 'wool'
   if (/glass|ice|amethyst|sea_lantern|glowstone|shroomlight/.test(k)) return 'glass'
   if (/_block$|^raw_|copper|netherite|iron|gold|diamond|emerald|lapis|redstone_block|anvil|chain|lantern|target/.test(k) && !/ore|coal_block|bone|honeycomb|note|bamboo|amethyst/.test(k)) return 'metal'
   if (/log|planks|wood|bookshelf|crafting|barrel|jukebox|note_block|chest|bamboo|fence|door|trapdoor|shelf/.test(k)) return 'wood'

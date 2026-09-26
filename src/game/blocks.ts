@@ -7,6 +7,23 @@ import catalog from './catalog.json'
  */
 export type Face = 'top' | 'bottom' | 'side'
 
+/**
+ * La forma del bloque, que decide cómo se malla y si se atraviesa:
+ *  cube      caja entera (con `front` distinto si lo hay: horno, cofre...)
+ *  slab      media altura (abajo; con rotación 1, arriba)
+ *  stairs    escalera (mira hacia `rot`)
+ *  cross     dos planos en X (flores, hierba, antorcha, setas)
+ *  torch     como cross pero fino y brilla
+ *  door      panel fino en un lado (abierta gira 90°); ocupa 2 bloques (abajo/arriba)
+ *  trapdoor  tablilla abajo (abierta se pega al lado)
+ *  bed       media altura, dos bloques (pies/cabecera), textura de cama
+ *  fence     poste central + travesaños hacia vecinos iguales
+ *  pane      panel fino centrado (cristal, barrotes) que se une a vecinos
+ *  ladder    plano pegado a la pared
+ *  carpet    lámina de 1/16 en el suelo
+ */
+export type Shape = 'cube' | 'slab' | 'stairs' | 'cross' | 'torch' | 'door' | 'trapdoor' | 'bed' | 'fence' | 'pane' | 'ladder' | 'carpet'
+
 export interface BlockDef {
   id: number
   key: string
@@ -26,6 +43,17 @@ export interface BlockDef {
   hidden: boolean
   /** líquidos: 0 fuente, 1-7 corriente (más = menos agua), 8 cayendo */
   level: number
+  shape: Shape
+  /** textura de la cara frontal (la que mira hacia la rotación), si es distinta */
+  front?: string
+  /** se puede atravesar (flores, antorchas, puertas abiertas se calculan aparte) */
+  passable: boolean
+  /** clic derecho hace algo (abrir puerta/trampilla) */
+  interact: boolean
+  /** ocupa dos bloques (puerta: arriba; cama: cabecera) */
+  tall: boolean
+  /** el jugador la orienta al ponerla */
+  orientable: boolean
 }
 
 interface RawBlock {
@@ -42,6 +70,9 @@ interface RawBlock {
   hardness?: number
   hidden?: boolean
   level?: number
+  shape?: Shape
+  front?: string
+  interact?: boolean
 }
 
 export const CATEGORIES: [string, string][] = catalog.categories as [string, string][]
@@ -50,18 +81,28 @@ export const BLOCKS: BlockDef[] = [
   {
     id: 0, key: 'air', name: 'Aire', category: 'special', textures: { top: 'stone', side: 'stone', bottom: 'stone' },
     opaque: false, cutout: false, liquid: false, hardness: 0, glow: 0, hidden: true, level: 0,
+    shape: 'cube', passable: true, interact: false, tall: false, orientable: false,
   },
   ...(catalog.blocks as RawBlock[]).map((b, i): BlockDef => {
     const top = b.top ?? b.all ?? '121'
     const side = b.side ?? b.all ?? top
     const bottom = b.bottom ?? (b.all ? b.all : top)
+    const shape: Shape = b.shape ?? 'cube'
+    const fullCube = shape === 'cube'
     return {
       id: i + 1,
       key: b.key,
       name: b.name,
       category: b.cat,
       textures: { top, side, bottom },
-      opaque: !b.cutout && !b.liquid,
+      shape,
+      front: b.front,
+      passable: shape === 'cross' || shape === 'torch' || shape === 'ladder' || shape === 'carpet',
+      interact: !!b.interact || shape === 'door' || shape === 'trapdoor',
+      tall: shape === 'door' || shape === 'bed',
+      orientable: shape === 'stairs' || shape === 'door' || shape === 'trapdoor' || shape === 'bed' || shape === 'ladder' || !!b.front,
+      // sólo una caja entera y sin recorte tapa las caras de sus vecinos
+      opaque: fullCube && !b.cutout && !b.liquid,
       cutout: !!b.cutout,
       liquid: !!b.liquid,
       hardness: b.hardness === -1 || b.liquid ? Infinity : (b.hardness ?? 1),
@@ -142,16 +183,34 @@ export const Block = {
   OBSIDIAN: idOf('obsidian'),
 }
 
-export const blockDef = (id: number): BlockDef => BLOCK_BY_ID[id] ?? BLOCK_BY_ID[Block.STONE]
-export const isOpaque = (id: number) => BLOCK_BY_ID[id]?.opaque === true
-export const isLiquid = (id: number) => BLOCK_BY_ID[id]?.liquid === true
-export const isWater = (id: number) => id === Block.WATER || BLOCK_BY_KEY.get('water_1')!.id <= id && id <= Block.WATER_FALL
+export const blockDef = (id: number): BlockDef => BLOCK_BY_ID[base(id)] ?? BLOCK_BY_ID[Block.STONE]
+/**
+ * Los ids que viajan por el mundo llevan la **rotación** (0-3, hacia dónde
+ * mira) en los bits 12-13, y un bit de **estado** (abierta / mitad de arriba /
+ * cabecera) en el 14. `base()` los quita; `blockDef` ya lo hace por dentro.
+ */
+export const ROT_SHIFT = 12
+export const STATE_BIT = 1 << 14
+export const base = (id: number) => id & 0xfff
+export const rotOf = (id: number) => (id >> ROT_SHIFT) & 3
+export const stateOf = (id: number) => (id & STATE_BIT) !== 0
+export const withRot = (id: number, rot: number) => base(id) | ((rot & 3) << ROT_SHIFT)
+export const withState = (id: number, on: boolean) => (on ? id | STATE_BIT : id & ~STATE_BIT)
+
+export const isOpaque = (id: number) => BLOCK_BY_ID[base(id)]?.opaque === true
+export const isLiquid = (id: number) => BLOCK_BY_ID[base(id)]?.liquid === true
+export const isWater = (id: number) => base(id) === Block.WATER || (BLOCK_BY_KEY.get('water_1')!.id <= base(id) && base(id) <= Block.WATER_FALL)
 /** el id del agua corriente con ese nivel (1-7), 8 = cayendo */
 export const waterLevel = (level: number): number => (level >= 8 ? Block.WATER_FALL : level <= 0 ? Block.WATER : BLOCK_BY_KEY.get(`water_${level}`)!.id)
-export const levelOf = (id: number): number => BLOCK_BY_ID[id]?.level ?? 0
-/** sólido para chocar: todo menos aire y líquidos */
-export const isSolid = (id: number) => id !== 0 && !isLiquid(id)
+export const levelOf = (id: number): number => BLOCK_BY_ID[base(id)]?.level ?? 0
+/** sólido para chocar: todo menos aire, líquidos, plantas y puertas/trampillas abiertas */
+export const isSolid = (id: number) => {
+  const d = BLOCK_BY_ID[base(id)]
+  if (!d || d.id === 0 || d.liquid || d.passable) return false
+  if ((d.shape === 'door' || d.shape === 'trapdoor') && stateOf(id)) return false
+  return true
+}
 
 export const TEXTURE_NAMES = Array.from(
-  new Set(BLOCKS.flatMap((b) => [b.textures.top, b.textures.bottom, b.textures.side])),
+  new Set(BLOCKS.flatMap((b) => [b.textures.top, b.textures.bottom, b.textures.side, ...(b.front ? [b.front] : [])])),
 )

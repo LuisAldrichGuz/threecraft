@@ -153,7 +153,7 @@ export class Generator {
     return false
   }
 
-  fill(blocks: Uint8Array, cx: number, cz: number, columns: Column[]): void {
+  fill(blocks: Uint16Array, cx: number, cz: number, columns: Column[]): void {
     const baseX = cx * CHUNK_SIZE
     const baseZ = cz * CHUNK_SIZE
     for (let lx = 0; lx < CHUNK_SIZE; lx++) {
@@ -221,7 +221,7 @@ export class Generator {
     return { height, kind }
   }
 
-  decorate(blocks: Uint8Array, cx: number, cz: number, columnAt: (x: number, z: number) => Column): void {
+  decorate(blocks: Uint16Array, cx: number, cz: number, columnAt: (x: number, z: number) => Column): void {
     const baseX = cx * CHUNK_SIZE
     const baseZ = cz * CHUNK_SIZE
     const MARGIN = 3

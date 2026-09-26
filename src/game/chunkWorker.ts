@@ -12,10 +12,10 @@ import { buildChunkMesh, transferables, UNKNOWN, type UVTable } from './mesher'
 export type WorkerRequest =
   | { type: 'init'; seed: number; uv: UVTable }
   | { type: 'generate'; id: number; cx: number; cz: number }
-  | { type: 'mesh'; id: number; cx: number; cz: number; blocks: (Uint8Array | null)[] }
+  | { type: 'mesh'; id: number; cx: number; cz: number; blocks: (Uint16Array | null)[] }
 
 export type WorkerResponse =
-  | { type: 'generated'; id: number; cx: number; cz: number; blocks: Uint8Array }
+  | { type: 'generated'; id: number; cx: number; cz: number; blocks: Uint16Array }
   | { type: 'meshed'; id: number; cx: number; cz: number; mesh: ReturnType<typeof buildChunkMesh> }
 
 let generator: Generator | null = null
@@ -33,8 +33,8 @@ function column(x: number, z: number): Column {
   return c
 }
 
-function generate(cx: number, cz: number): Uint8Array {
-  const blocks = new Uint8Array(CHUNK_SIZE * WORLD_HEIGHT * CHUNK_SIZE)
+function generate(cx: number, cz: number): Uint16Array {
+  const blocks = new Uint16Array(CHUNK_SIZE * WORLD_HEIGHT * CHUNK_SIZE)
   const cols: Column[] = new Array(CHUNK_SIZE * CHUNK_SIZE)
   for (let lx = 0; lx < CHUNK_SIZE; lx++) {
     for (let lz = 0; lz < CHUNK_SIZE; lz++) cols[lx * CHUNK_SIZE + lz] = column(cx * CHUNK_SIZE + lx, cz * CHUNK_SIZE + lz)
@@ -45,7 +45,7 @@ function generate(cx: number, cz: number): Uint8Array {
 }
 
 /** los 9 chunks alrededor, en orden (dx+1)*3 + (dz+1) */
-function sourceFrom(cx: number, cz: number, blocks: (Uint8Array | null)[]) {
+function sourceFrom(cx: number, cz: number, blocks: (Uint16Array | null)[]) {
   return {
     getBlockForMesh(x: number, y: number, z: number): number {
       if (y < 0) return Block.BEDROCK

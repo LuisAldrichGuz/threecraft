@@ -5,12 +5,12 @@ import { loadChunkEdits, saveChunkEdits, type ChunkEdits } from './storage'
 import { UNKNOWN } from './mesher'
 
 export class Chunk {
-  blocks: Uint8Array
+  blocks: Uint16Array
   edits: ChunkEdits
   cx: number
   cz: number
 
-  constructor(cx: number, cz: number, blocks: Uint8Array, edits: ChunkEdits) {
+  constructor(cx: number, cz: number, blocks: Uint16Array, edits: ChunkEdits) {
     this.cx = cx
     this.cz = cz
     this.blocks = blocks
@@ -67,7 +67,7 @@ export class World {
   }
 
   /** un chunk que generó un worker: se le aplican las ediciones guardadas */
-  insertChunk(cx: number, cz: number, blocks: Uint8Array): Chunk {
+  insertChunk(cx: number, cz: number, blocks: Uint16Array): Chunk {
     const key = chunkKey(cx, cz)
     const existing = this.chunks.get(key)
     if (existing) return existing
@@ -92,8 +92,8 @@ export class World {
   }
 
   /** los bloques de los 9 chunks alrededor, en el orden que espera el worker; null si no está */
-  neighborhood(cx: number, cz: number): (Uint8Array | null)[] {
-    const out: (Uint8Array | null)[] = []
+  neighborhood(cx: number, cz: number): (Uint16Array | null)[] {
+    const out: (Uint16Array | null)[] = []
     for (let dx = -1; dx <= 1; dx++) {
       for (let dz = -1; dz <= 1; dz++) out.push(this.chunks.get(chunkKey(cx + dx, cz + dz))?.blocks ?? null)
     }
@@ -125,8 +125,8 @@ export class World {
     saveChunkEdits(this.seed, cx, cz, chunk.edits)
   }
 
-  private generateBlocks(cx: number, cz: number): Uint8Array {
-    const blocks = new Uint8Array(CHUNK_SIZE * WORLD_HEIGHT * CHUNK_SIZE)
+  private generateBlocks(cx: number, cz: number): Uint16Array {
+    const blocks = new Uint16Array(CHUNK_SIZE * WORLD_HEIGHT * CHUNK_SIZE)
     const baseX = cx * CHUNK_SIZE
     const baseZ = cz * CHUNK_SIZE
     const columns: Column[] = new Array(CHUNK_SIZE * CHUNK_SIZE)

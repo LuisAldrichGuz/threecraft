@@ -42,13 +42,13 @@ export class WorkerPool {
     })
   }
 
-  async generate(cx: number, cz: number): Promise<Uint8Array> {
+  async generate(cx: number, cz: number): Promise<Uint16Array> {
     const r = await this.send({ type: 'generate', id: this.nextId++, cx, cz })
     if (r.type !== 'generated') throw new Error('respuesta inesperada')
     return r.blocks
   }
 
-  async mesh(cx: number, cz: number, blocks: (Uint8Array | null)[]): Promise<ChunkMesh> {
+  async mesh(cx: number, cz: number, blocks: (Uint16Array | null)[]): Promise<ChunkMesh> {
     const r = await this.send({ type: 'mesh', id: this.nextId++, cx, cz, blocks })
     if (r.type !== 'meshed') throw new Error('respuesta inesperada')
     return r.mesh
