@@ -203,6 +203,44 @@ export const isWater = (id: number) => base(id) === Block.WATER || (BLOCK_BY_KEY
 /** el id del agua corriente con ese nivel (1-7), 8 = cayendo */
 export const waterLevel = (level: number): number => (level >= 8 ? Block.WATER_FALL : level <= 0 ? Block.WATER : BLOCK_BY_KEY.get(`water_${level}`)!.id)
 export const levelOf = (id: number): number => BLOCK_BY_ID[base(id)]?.level ?? 0
+/**
+ * el tramo vertical que ocupa un bloque para chocar, [y0, y1] dentro de su
+ * celda: losas y escaleras media altura (arriba o abajo según el estado),
+ * alfombras y trampillas cerradas una lámina; lo demás el bloque entero
+ */
+export const collisionSpan = (id: number): [number, number] => {
+  const d = BLOCK_BY_ID[base(id)]
+  if (!d) return [0, 1]
+  if (d.shape === 'slab') return stateOf(id) ? [0.5, 1] : [0, 0.5]
+  // la escalera entera va de 0 a 1; `stairBoxes` da sus dos cajas para chocar fino
+  if (d.shape === 'stairs') return [0, 1]
+  if (d.shape === 'carpet') return [0, 0.0625]
+  if (d.shape === 'trapdoor') return [0, 0.1875]
+  if (d.shape === 'bed') return [0, 0.5625]
+  return [0, 1]
+}
+
+/**
+ * cajas de colisión de un bloque dentro de su celda, [x0,y0,z0,x1,y1,z1] en 0..1.
+ * Escalera: media base + escalón atrás (girado según la rotación); lo demás una caja del `collisionSpan`
+ */
+export const collisionBoxes = (id: number): [number, number, number, number, number, number][] => {
+  const d = BLOCK_BY_ID[base(id)]
+  if (d?.shape === 'stairs') {
+    const rot = rotOf(id)
+    const up = stateOf(id)
+    const half: [number, number, number, number, number, number] = up ? [0, 0.5, 0, 1, 1, 1] : [0, 0, 0, 1, 0.5, 1]
+    // el escalón está en el lado hacia el que "mira" la rotación (0=-z,1=+x,2=+z,3=-x)
+    const step: [number, number, number, number, number, number] =
+      rot === 0 ? [0, 0, 0, 1, 1, 0.5] : rot === 1 ? [0.5, 0, 0, 1, 1, 1] : rot === 2 ? [0, 0, 0.5, 1, 1, 1] : [0, 0, 0, 0.5, 1, 1]
+    if (up) step[1] = 0; else step[1] = 0.5
+    step[4] = up ? 0.5 : 1
+    return [half, step]
+  }
+  const [s0, s1] = collisionSpan(id)
+  return [[0, s0, 0, 1, s1, 1]]
+}
+
 /** sólido para chocar: todo menos aire, líquidos, plantas y puertas/trampillas abiertas */
 export const isSolid = (id: number) => {
   const d = BLOCK_BY_ID[base(id)]

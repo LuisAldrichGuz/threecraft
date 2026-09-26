@@ -497,9 +497,10 @@ export function buildChunkMesh(source: BlockSource, uv: UVTable, cx: number, cz:
         }
 
         if (def.shape === 'stairs') {
-          const faces = open.slice(); faces[2] = true
-          target.box(x, y, z, [0, 0, 0, 16, 8, 16], faceUV, lit, faces)
-          target.box(x, y, z, rotBox([0, 8, 8, 16, 16, 16], rot), faceUV, lit)
+          const faces = open.slice(); faces[state ? 3 : 2] = true
+          target.box(x, y, z, state ? [0, 8, 0, 16, 16, 16] : [0, 0, 0, 16, 8, 16], faceUV, lit, faces)
+          // escalón hacia donde mira la rotación (0 = -z): al ponerla mirando al jugador, el lado alto queda lejos
+          target.box(x, y, z, rotBox(state ? [0, 0, 0, 16, 8, 8] : [0, 8, 0, 16, 16, 8], rot), faceUV, lit)
           continue
         }
 
@@ -603,12 +604,16 @@ export function buildBlockMesh(uv: UVTable, block: number): MeshBuffers {
     }
     return b.finish()
   }
-  // la cámara de los iconos mira desde +x/+z: la escalera se gira para que el escalón quede al fondo
-  const shown = def.shape === 'stairs' || def.shape === 'bed' ? (block & ~(3 << 12)) | (2 << 12) : block
+  // la cámara de los iconos mira desde +x/+z: escalera y cama se giran para leerse de frente;
+  // la puerta enseña sus dos mitades (abajo en y=0, arriba en y=1) a media escala
+  const shown = def.shape === 'stairs' ? (block & ~(3 << 12)) | (1 << 12) : def.shape === 'bed' ? (block & ~(3 << 12)) | (2 << 12) : def.shape === 'door' ? (block & ~(3 << 12)) | (1 << 12) : block
+  const upper = def.shape === 'door' ? shown | (1 << 14) : Block.AIR
   const one = {
-    getBlockForMesh: (x: number, y: number, z: number) => (x === 0 && y === 0 && z === 0 ? shown : Block.AIR),
+    getBlockForMesh: (x: number, y: number, z: number) => (x === 0 && z === 0 ? (y === 0 ? shown : y === 1 ? upper : Block.AIR) : Block.AIR),
   }
   const m = buildChunkMesh(one, uv, 0, 0)
+  const scale = def.shape === 'door' ? 0.5 : 1
+  const yOff = def.shape === 'door' ? 1 : 0.5
   // juntar opaco + recorte + follaje en un buffer y centrar
   const parts = [m.opaque, m.cutout, m.foliage]
   const verts = parts.reduce((n, p) => n + p.pos.length / 3, 0)
@@ -617,9 +622,9 @@ export function buildBlockMesh(uv: UVTable, block: number): MeshBuffers {
   let i = 0
   for (const p of parts) {
     for (let k = 0; k < p.pos.length; k += 3) {
-      out.pos[(v * 3) + k] = p.pos[k] - 0.5
-      out.pos[(v * 3) + k + 1] = p.pos[k + 1] - 0.5
-      out.pos[(v * 3) + k + 2] = p.pos[k + 2] - 0.5
+      out.pos[(v * 3) + k] = (p.pos[k] - 0.5) * scale
+      out.pos[(v * 3) + k + 1] = (p.pos[k + 1] - yOff) * scale
+      out.pos[(v * 3) + k + 2] = (p.pos[k + 2] - 0.5) * scale
     }
     out.norm.set(p.norm, v * 3)
     out.uv.set(p.uv, v * 2)

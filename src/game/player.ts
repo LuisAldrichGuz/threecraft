@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { Block, isLiquid, isSolid } from './blocks'
+import { Block, collisionBoxes, isLiquid, isSolid } from './blocks'
 import type { World } from './world'
 
 /**
@@ -15,6 +15,8 @@ const CROUCH_EYE = 1.27
 
 // los mismos números que `playerFeel.ts` del juego 3D del portafolio
 // velocidades a escala de Minecraft (andar 4.3, correr 5.6); la aceleración y el salto siguen siendo los del portafolio
+/** lo que se sube andando sin saltar: una losa o un escalón */
+const STEP_HEIGHT = 1.05
 const WALK_SPEED = 4.3
 const RUN_SPEED = 5.8
 const AIR_SPEED = 4.5
@@ -106,11 +108,69 @@ export class Player {
     for (let bx = minX; bx <= maxX; bx++) {
       for (let by = minY; by <= maxY; by++) {
         for (let bz = minZ; bz <= maxZ; bz++) {
-          if (world.isSolidAt(bx, by, bz)) return true
+          const b = world.getBlock(bx, by, bz)
+          if (!isSolid(b)) continue
+          // formas parciales (losas, escaleras, alfombras) sólo chocan con sus cajas
+          for (const [cx0, cy0, cz0, cx1, cy1, cz1] of collisionBoxes(b)) {
+            if (x - HALF_WIDTH < bx + cx1 && x + HALF_WIDTH > bx + cx0 && z - HALF_WIDTH < bz + cz1 && z + HALF_WIDTH > bz + cz0 && y < by + cy1 && y + height > by + cy0) return true
+          }
         }
       }
     }
     return false
+  }
+
+  /** la superficie más alta bajo la huella dentro de la celda de los pies (para apoyarse en losas) */
+  private floorTop(world: World, x: number, y: number, z: number): number {
+    const by = Math.floor(y)
+    let top = by + 1
+    const minX = Math.floor(x - HALF_WIDTH)
+    const maxX = Math.floor(x + HALF_WIDTH)
+    const minZ = Math.floor(z - HALF_WIDTH)
+    const maxZ = Math.floor(z + HALF_WIDTH)
+    let found = false
+    for (let bx = minX; bx <= maxX; bx++) {
+      for (let bz = minZ; bz <= maxZ; bz++) {
+        const b = world.getBlock(bx, by, bz)
+        if (!isSolid(b)) continue
+        for (const [cx0, cy0, cz0, cx1, cy1, cz1] of collisionBoxes(b)) {
+          if (!(x - HALF_WIDTH < bx + cx1 && x + HALF_WIDTH > bx + cx0 && z - HALF_WIDTH < bz + cz1 && z + HALF_WIDTH > bz + cz0)) continue
+          if (y < by + cy1 && y >= by + cy0 - 1) {
+            top = found ? Math.max(top, by + cy1) : by + cy1
+            found = true
+          }
+        }
+      }
+    }
+    return found ? top : by + 1
+  }
+
+  /** cuánto hay que subir para pasar por encima de lo que estorba en (x, z); Infinity si no se puede */
+  private stepUp(world: World, x: number, z: number, height: number): number {
+    let top = -Infinity
+    const minX = Math.floor(x - HALF_WIDTH)
+    const maxX = Math.floor(x + HALF_WIDTH)
+    const minZ = Math.floor(z - HALF_WIDTH)
+    const maxZ = Math.floor(z + HALF_WIDTH)
+    const by = Math.floor(this.position.y + 0.01)
+    for (let bx = minX; bx <= maxX; bx++) {
+      for (let bz = minZ; bz <= maxZ; bz++) {
+        for (const yy of [by, by + 1]) {
+          const b = world.getBlock(bx, yy, bz)
+          if (!isSolid(b)) continue
+          for (const [cx0, , cz0, cx1, cy1, cz1] of collisionBoxes(b)) {
+            if (!(x - HALF_WIDTH < bx + cx1 && x + HALF_WIDTH > bx + cx0 && z - HALF_WIDTH < bz + cz1 && z + HALF_WIDTH > bz + cz0)) continue
+            const t = yy + cy1
+            if (t > this.position.y + 0.001) top = Math.max(top, t)
+          }
+        }
+      }
+    }
+    if (top === -Infinity) return Infinity
+    const rise = top - this.position.y
+    if (rise > STEP_HEIGHT + 0.001) return Infinity
+    // sólo si arriba hay sitio para el cuerpo
+    return this.collides(world, x, top, z, height) ? Infinity : rise
   }
 
   /** ¿hay suelo bajo el pie en esta posición? (para no caerse agachado) */
@@ -240,21 +300,34 @@ export class Player {
       }
     }
 
-    if (this.collides(world, nx, this.position.y, this.position.z, height)) {
-      // subir un escalón de un bloque si cabe, como el auto-salto
-      nx = this.position.x
-      this.velocity.x = 0
+    // auto-step: si lo que estorba es bajo (losa, escalera) y estás en el suelo, se sube solo
+    let ny0 = this.position.y
+    if (this.collides(world, nx, ny0, this.position.z, height)) {
+      const rise = this.onGround || this.inWater ? this.stepUp(world, nx, this.position.z, height) : Infinity
+      if (rise !== Infinity) ny0 += rise
+      else {
+        nx = this.position.x
+        this.velocity.x = 0
+      }
     }
-    if (this.collides(world, nx, this.position.y, nz, height)) {
-      nz = this.position.z
-      this.velocity.z = 0
+    if (this.collides(world, nx, ny0, nz, height)) {
+      const rise = this.onGround || this.inWater ? this.stepUp(world, nx, nz, height) : Infinity
+      if (rise !== Infinity && !this.collides(world, nx, this.position.y + rise, nz, height)) ny0 = this.position.y + rise
+      else {
+        nz = this.position.z
+        this.velocity.z = 0
+      }
+    }
+    if (ny0 !== this.position.y) {
+      this.position.y = ny0
+      ny = ny0 + Math.min(0, this.velocity.y * dt)
     }
     const wasFalling = this.velocity.y < 0
     if (this.collides(world, nx, ny, nz, height)) {
       if (wasFalling) {
-        // apoyar justo sobre el bloque
-        ny = Math.floor(ny) + 1
-        while (this.collides(world, nx, ny, nz, height)) ny += 1
+        // apoyar justo sobre lo que haya debajo (bloque entero, losa, escalera...)
+        ny = this.floorTop(world, nx, ny, nz)
+        while (this.collides(world, nx, ny, nz, height)) ny += 0.5
         this.onGround = true
       } else {
         ny = this.position.y
