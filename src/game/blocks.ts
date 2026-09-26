@@ -245,7 +245,8 @@ export const collisionBoxes = (id: number): [number, number, number, number, num
 export const isSolid = (id: number) => {
   const d = BLOCK_BY_ID[base(id)]
   if (!d || d.id === 0 || d.liquid || d.passable) return false
-  if ((d.shape === 'door' || d.shape === 'trapdoor') && stateOf(id)) return false
+  // ⚠️ abierta es el bit 15, no `stateOf` (bit 14 = mitad de arriba): con ése la puerta de abajo chocaba siempre
+  if ((d.shape === 'door' || d.shape === 'trapdoor') && (id & (1 << 15)) !== 0) return false
   return true
 }
 
