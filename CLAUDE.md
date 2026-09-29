@@ -1,4 +1,4 @@
-# minecraft-threejs — el Minecraft de Luis en Three.js
+# ThreeCraft.js — un juego de bloques en Three.js
 
 Proyecto aparte del portafolio (`luisaldrichguz.net-2026`): React + Vite + Three.js,
 sin librerías de motor. Este archivo es el **índice**; el detalle vive en
@@ -17,12 +17,12 @@ sin librerías de motor. Este archivo es el **índice**; el detalle vive en
 | Arena, arena roja y grava **caen**; **agua con niveles** como Minecraft (fuente, corriente 1-7, cayendo, fuente infinita, se seca sin fuente) | ✅ |
 | Luz por vértice (sol por columna + propagación desde lo que brilla), oclusión ambiental, sombras del sol (PCF, siguen al jugador), rayos de sol, cielo por shader, nubes de prismas 12×12×4, noche con luna | ✅ |
 | Agua con shader: olas, Fresnel, brillo del sol, ondas y chapoteo al entrar | ✅ |
-| Jugador: skin de Minecraft 64×64 (las 21 del portafolio), rig con cadera/torso/cabeza/brazos, poses idle·walk·run·crouch·jump·fall·land·swim·fly con transiciones | ✅ |
+| Jugador: skin 64×64 (la del autor; las demás no se publican, van en `public/skins/extra.json`), rig con cadera/torso/cabeza/brazos, poses idle·walk·run·crouch·jump·fall·land·swim·fly con transiciones | ✅ |
 | Cámara: primera (fov 100, ojos por postura como el portafolio), tercera atrás y de frente (fov 65), F5 las recorre | ✅ |
 | Físicas: aceleración/coyote/buffer del portafolio a escala de Minecraft, salto fijo de un bloque, nadar, volar (doble espacio), agachado sin caerse | ✅ |
 | UI estilo Minecraft: pausa, inventario por categorías con iconos 3D, hotbar, skins, mundo (semilla, distancia, sombras, día/noche), F3 | ✅ |
 | Guardado en `localStorage` por semilla: ediciones por chunk, jugador, hotbar, ajustes · **Exportar / Importar** `.threecraft` desde «Cargar mundos» | ✅ |
-| **Mundo de serie** «Castillo de Aldrich» (`public/worlds/aldrich.threecraft`): el **Castle Lividus of Aeritus** de KyleCRat (CC BY-NC-SA 3.0, crédito en pausa y README) con ALDRICH en oro encima · se instala y abre solo la primera vez · se genera con `npx tsx scripts/build-castle.ts` desde `scripts/castle/lividus.json.gz` | ✅ |
+| **Mundo de serie** «Castle Lividus of Aeritus» (`public/worlds/castle-lividus.threecraft`): el **Castle Lividus of Aeritus** de KyleCRat (CC BY-NC-SA 3.0, crédito en pausa y README) con ALDRICH en oro encima · se instala y abre solo la primera vez · se genera con `npx tsx scripts/build-castle.ts` desde `scripts/castle/lividus.json.gz` | ✅ |
 | El mundo de serie es **toda la ciudad** de Lividus (300×380, ~1.9 M de ediciones): las ediciones van en base64 por **tiradas** (`#` + índice, bloque, largo) y `bundle-world.ts` toma el export **entero** (bloques, jugador, hora): lo que Luis rompa o ponga antes de exportar es parte del mundo de serie · Esc pausa y **sólo el clic reanuda** | ✅ |
 | El `.threecraft` guarda con el jugador la **hora y si el tiempo corre**; `npx tsx scripts/bundle-world.ts` convierte el último export de ~/Descargas en el mundo de serie (posición, hora y todo) · al entrar a un mundo **suena una canción de entrada** | ✅ |
 | **Antorchas de pared** (`settleTorch`: al cargar un chunk y al romper un bloque, la antorcha sin apoyo se pega a la pared más cercana o cae como objeto · clic en una cara lateral: `state` + `rot` hacia afuera, poste inclinado `post()` en el mesher) y **chispas y humo** desde la punta (`torchFire.ts`, busca antorchas a 20 bloques cada medio segundo) | ✅ |
@@ -79,7 +79,7 @@ scripts/castle/          lividus.json.gz: el castillo ya traducido a ids del cat
 src/App.tsx, App.css   la UI (React), estilo Minecraft con CSS propio
 public/textures/       Faithful 32x por nombre de Minecraft (+ LICENSE-FAITHFUL.txt y CREDITS.md)
 public/sounds/         Kenney CC0 (+ LICENSE.md)
-public/skins/          las 21 skins
+public/skins/          la skin del autor (las tuyas: extra.json, que git ignora)
 ```
 
 ## Reglas
