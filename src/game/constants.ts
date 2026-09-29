@@ -7,9 +7,9 @@ export const CHUNKS_PER_FRAME = 2
 
 export const chunkKey = (cx: number, cz: number) => `${cx},${cz}`
 
-export const SKINS = [
-  'aldrich', 'apolo', 'chell', 'doom-slayer', 'dr-simi', 'geralt', 'golem', 'gordon-freeman',
-  'guts', 'hollow-knight', 'james-sunderland', 'jill-valentine', 'master-chief', 'naruto',
-  'nightwing', 'prisma', 'psycho', 'ramona', 'ranger', 'shaman', 'warden',
-]
+// Las que se distribuyen con el juego: hechas para el proyecto, sin nada de terceros.
+// Las skins de personajes con dueño (videojuegos, comics) no se publican aqui; si tienes
+// las tuyas, ponlas en `public/skins/` y listalas en `public/skins/extra.json`, que git
+// ignora: se cargan solas al arrancar.
+export const SKINS = ['aldrich']
 export const skinUrl = (id: string) => `/skins/${id}.png`

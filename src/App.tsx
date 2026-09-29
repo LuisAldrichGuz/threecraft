@@ -256,10 +256,20 @@ function App() {
   const [hud, setHud] = useState<Hud>(EMPTY_HUD)
   const [inventory, setInventory] = useState(false)
   const [tab, setTab] = useState<'menu' | 'skins' | 'controls' | 'world' | 'graphics'>('menu')
+  // Las skins que van en el repo mas las tuyas: `public/skins/extra.json` lo ignora git,
+  // asi que las de personajes con dueño se quedan en tu maquina y no se publican.
+  const [skins, setSkins] = useState<string[]>(SKINS)
   const [category, setCategory] = useState<string>(CATEGORIES[0][0])
   /** lo que se está arrastrando en el inventario: el bloque y de qué casilla del hotbar salió (o null) */
   const [drag, setDrag] = useState<{ block: number; from: number | null; x: number; y: number } | null>(null)
   const [activeSeed, setActiveSeed] = useState<number | null>(null)
+
+  useEffect(() => {
+    fetch('/skins/extra.json')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((extra) => Array.isArray(extra) && setSkins([...SKINS, ...extra]))
+      .catch(() => {})
+  }, [])
 
   // la primera vez: se instala el mundo de Aldrich y se entra directo a él
   useEffect(() => {
@@ -482,7 +492,7 @@ function App() {
                 <div className="skins-layout">
                   <SkinPreview3D id={hud.skin} />
                   <div className="skins">
-                  {SKINS.map((id) => (
+                  {skins.map((id) => (
                     <button key={id} className={`skin ${hud.skin === id ? 'active' : ''}`} onClick={() => game?.setSkin(id)} title={id}>
                       <SkinFace id={id} size={40} />
                       <span>{id.replace(/-/g, ' ')}</span>

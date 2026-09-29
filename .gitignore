@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Skins de personajes con dueño (videojuegos, comics): se quedan en tu maquina.
+# La del autor si va en el repo; las tuyas se listan en extra.json y se cargan solas.
+public/skins/*
+!public/skins/aldrich.png
+public/skins/extra.json

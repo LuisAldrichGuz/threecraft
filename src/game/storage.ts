@@ -330,7 +330,7 @@ const BUNDLED_FLAG = 'bundledWorldInstalled'
 export async function installBundledWorld(): Promise<number | null> {
   if (read<boolean>(BUNDLED_FLAG, false)) return null
   try {
-    const res = await fetch('/worlds/aldrich.threecraft')
+    const res = await fetch('/worlds/castle-lividus.threecraft')
     if (!res.ok) return null
     const file = (await res.json()) as WorldFile
     const seed = importWorld(file)
