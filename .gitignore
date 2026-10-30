@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# App de agentes-oficina, no es del juego
+.oficina/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
